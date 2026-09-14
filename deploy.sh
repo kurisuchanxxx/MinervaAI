@@ -1,6 +1,6 @@
 #!/bin/bash
 # =========================================================
-#  OSIRIS — Deploy Cycle Script
+#  MinervaAI — Deploy Cycle Script
 #  Git → SSH → Docker Rebuild → Live
 # =========================================================
 #
@@ -25,7 +25,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║     OSIRIS DEPLOYMENT CYCLE              ║${NC}"
+echo -e "${CYAN}║     MinervaAI DEPLOYMENT CYCLE              ║${NC}"
 echo -e "${CYAN}║     Git → SSH → Docker → Live            ║${NC}"
 echo -e "${CYAN}╚══════════════════════════════════════════╝${NC}"
 echo ""
@@ -49,5 +49,5 @@ echo ""
 
 echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║     ✅ DEPLOYMENT COMPLETE               ║${NC}"
-echo -e "${CYAN}║     https://osirisai.live is live         ║${NC}"
+echo -e "${CYAN}║     https://minervaai.vercel.app is live         ║${NC}"
 echo -e "${CYAN}╚══════════════════════════════════════════╝${NC}"

@@ -3,7 +3,7 @@
  * ║  POLYBOLOS SDK — Client Controller                              ║
  * ║  Unified Intelligence Fusion Engine                             ║
  * ║                                                                 ║
- * ║  Subscribes to OSIRIS feeds + external providers (Lattice),     ║
+ * ║  Subscribes to MinervaAI feeds + external providers (Lattice),     ║
  * ║  normalizes all data into PolybolosEntity[], and emits a        ║
  * ║  fused Common Operating Picture stream.                         ║
  * ╚══════════════════════════════════════════════════════════════════╝
@@ -21,7 +21,7 @@ import {
 } from './types';
 import { LatticeAdapter } from './LatticeAdapter';
 
-// ── OSIRIS Feed → Entity Translators ───────────────────────────────
+// ── MinervaAI Feed → Entity Translators ───────────────────────────────
 
 function translateFlights(flights: any[], subtype: string): PolybolosEntity[] {
   if (!flights?.length) return [];
@@ -188,7 +188,7 @@ export class PolybolosClient {
     this.config.onStatusChange?.(this.getStatus());
   }
 
-  /** Connect to the OSIRIS SSE stream endpoint */
+  /** Connect to the MinervaAI SSE stream endpoint */
   private connectSSE(): void {
     if (typeof EventSource === 'undefined') return;
 
@@ -220,7 +220,7 @@ export class PolybolosClient {
   }
 
   /**
-   * Ingest raw OSIRIS data and translate it into Polybolos entities.
+   * Ingest raw MinervaAI data and translate it into Polybolos entities.
    * This is the primary method called by page.tsx to feed data into the SDK.
    */
   ingestOsirisData(data: Record<string, any>): void {
@@ -344,7 +344,7 @@ export class PolybolosClient {
 
   private getActiveFeedCount(): number {
     let count = 0;
-    // Count OSIRIS feeds that have data
+    // Count MinervaAI feeds that have data
     const feeds = ['commercial_flights', 'private_flights', 'military_flights', 'maritime_ships',
       'satellites', 'earthquakes', 'fires', 'cameras', 'radiation'];
     for (const feed of feeds) {

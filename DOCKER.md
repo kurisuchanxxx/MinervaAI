@@ -1,10 +1,10 @@
-# Self-Hosting OSIRIS with Docker
+# Self-Hosting MinervaAI with Docker
 
-OSIRIS ships as a self-contained Next.js standalone build. This guide covers
+MinervaAI ships as a self-contained Next.js standalone build. This guide covers
 running it with Docker / Docker Compose, deploying it as a [CasaOS](https://casaos.io)
 app, and configuring the optional API keys.
 
-> **TL;DR:** OSIRIS runs fully **without any API keys**. All core feeds
+> **TL;DR:** MinervaAI runs fully **without any API keys**. All core feeds
 > (aviation, satellites, fires, earthquakes, weather, news, CVEs) use public
 > keyless sources. Keys only matter for the optional RECON scanner backend and
 > for raising rate limits on a few feeds.
@@ -14,7 +14,7 @@ app, and configuring the optional API keys.
 ## 1. Docker Compose (recommended)
 
 ```bash
-git clone https://github.com/simplifaisoul/osiris.git
+git clone https://github.com/kurisuchanxxx/MinervaAI.git
 cd osiris
 
 # optional: configure keys / scanner backend
@@ -29,10 +29,10 @@ What the compose file does:
 
 - **`build:`** — compose builds the image locally from the `Dockerfile`, so
   you always run the code you just cloned. To run the prebuilt registry image
-  instead, add `image: ghcr.io/simplifaisoul/osiris:latest` to the `osiris`
+  instead, add `image: ghcr.io/kurisuchanxxx/minervaai:latest` to the `osiris`
   service and drop the `build:` block.
 - **`env_file: .env` (`required: false`)** — if a `.env` file exists its
-  values are injected into the container; if it's missing, OSIRIS still starts
+  values are injected into the container; if it's missing, MinervaAI still starts
   with the keyless feeds.
 - **`ports: ${OSIRIS_PORT:-3000}:3000`** — the web UI. The container always
   listens on 3000; the published **host** port is `OSIRIS_PORT` (default
@@ -52,13 +52,13 @@ docker compose down             # stop & remove
 
 A prebuilt image for `linux/amd64` and `linux/arm64` is published to the GitHub
 Container Registry on every push to `master` and every `v*.*.*` tag, so you can
-run OSIRIS without building anything:
+run MinervaAI without building anything:
 
 ```bash
-docker pull ghcr.io/simplifaisoul/osiris:latest   # or a pinned tag, e.g. :0.1.0
+docker pull ghcr.io/kurisuchanxxx/minervaai:latest   # or a pinned tag, e.g. :0.1.0
 docker run -d --name osiris \
   -p 3005:3000 --env-file .env --restart unless-stopped \
-  ghcr.io/simplifaisoul/osiris:latest
+  ghcr.io/kurisuchanxxx/minervaai:latest
 ```
 
 The package is public — no `docker login` is required to pull it.
@@ -92,7 +92,7 @@ reads.
 2. CasaOS dashboard → **`+`** → **Install a customized app** → paste the
    contents of `docker-compose.yml`.
    *(or simply run `docker compose up -d` from the cloned directory).*
-3. OSIRIS appears on the dashboard with its icon, reachable on host port
+3. MinervaAI appears on the dashboard with its icon, reachable on host port
    `3000` (or whatever `OSIRIS_PORT` you set in `.env`).
 
 The app icon is the gold Eye-of-Horus mark in
@@ -103,7 +103,7 @@ metadata.
 > relative `build:` context may not resolve there. If importing the YAML
 > directly, either build/tag `osiris:latest` first
 > (`docker build -t osiris:latest /path/to/osiris`) or replace the `build:`
-> block with `image: ghcr.io/simplifaisoul/osiris:latest`.
+> block with `image: ghcr.io/kurisuchanxxx/minervaai:latest`.
 
 ---
 
@@ -119,7 +119,7 @@ Copy `.env.template` to `.env` and fill in only what you need.
 | `SCANNER_KEY` | Shared secret; **must equal the backend's `OSIRIS_KEY`** | RECON toolkit |
 
 Without `SCANNER_URL`/`SCANNER_KEY` the RECON endpoints return `503` and the
-rest of OSIRIS works normally. Generate a key with `openssl rand -hex 32`.
+rest of MinervaAI works normally. Generate a key with `openssl rand -hex 32`.
 
 ### Optional keys (reserved / for higher rate limits)
 

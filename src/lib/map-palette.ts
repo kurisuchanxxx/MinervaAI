@@ -1,5 +1,5 @@
 /**
- * OSIRIS — map layer palette.
+ * MinervaAI — map layer palette.
  *
  * The colours the *map* draws with, as opposed to the chrome around it: camera
  * dots, satellites, aircraft. They live as `--map-*` custom properties beside

@@ -4,7 +4,7 @@ import { isRateLimited, getClientIp } from '@/lib/ssrf-guard';
 export const dynamic = 'force-dynamic';
 
 /**
- * Thin proxy to the OSIRIS Intelligence Layer (osiris-intel).
+ * Thin proxy to the MinervaAI Intelligence Layer (osiris-intel).
  *
  * In Docker: fetches from http://osiris-intel:4000/resolve
  * In dev:    fetches from http://localhost:4000/resolve
@@ -66,7 +66,7 @@ export async function GET(req: Request) {
       headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' },
     });
   } catch (e) {
-    console.error('[OSIRIS] Intel proxy error:', e instanceof Error ? e.message : e);
+    console.error('[MinervaAI] Intel proxy error:', e instanceof Error ? e.message : e);
     return NextResponse.json(
       { error: 'Intelligence layer unavailable', nodes: [], links: [] },
       { status: 502 },

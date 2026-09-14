@@ -4,7 +4,7 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 /**
- * OSIRIS — the camera catalogue, saved.
+ * MinervaAI — the camera catalogue, saved.
  *
  * Cameras were assembled live, per request, from 48 upstreams. That put every
  * visitor behind the slowest provider of the moment: production served 23,240
