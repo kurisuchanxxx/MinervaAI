@@ -19,6 +19,7 @@ import ScaleBar from '@/components/ScaleBar';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { applySettings, loadSavedSettings } from '@/lib/style-tokens';
 import { COORD_FORMAT_STORAGE_KEY, COORD_FORMATS, coordFormatLabel, formatCoord, isCoordFormat, type CoordFormat } from '@/lib/coords';
+import { deserializeSymbols, serializeSymbols, SYMBOL_STORAGE_KEY, type Affiliation, type Echelon, type PlacedSymbol } from '@/lib/milsym';
 import SharePanel from '@/components/SharePanel';
 import ViewPresets from '@/components/ViewPresets';
 import KeyboardShortcuts from '@/components/KeyboardShortcuts';
@@ -28,6 +29,7 @@ import WorldRemote from '@/components/WorldRemote';
 import ArcGISPanel from '@/components/ArcGISPanel';
 import MinervaLogo from '@/components/MinervaLogo';
 const SitrepPanel = dynamic(() => import('@/components/SitrepPanel'));
+const MilSymbolPanel = dynamic(() => import('@/components/MilSymbolPanel'));
 import { LanguageToggle, defineMessages, useT, useLang, translate, localeOf } from '@/lib/i18n';
 const OsirisMap = dynamic(() => import('@/components/OsirisMap'), { ssr: false });
 const LayerPanel = dynamic(() => import('@/components/LayerPanel'));
@@ -142,6 +144,7 @@ const MESSAGES = defineMessages({
     cursorTitle: 'Cursor coordinates (hover over map)',
     coordFormatTitle: 'Click to switch coordinate format (DD / DMS / MGRS)',
     sitrepTip: 'SITREP — situational report',
+    symbolsTip: 'NATO symbols (APP-6)',
     cursor: 'CURSOR',
     locationTitle: 'Reverse-geocoded location name',
     location: 'LOCATION',
@@ -243,6 +246,7 @@ const MESSAGES = defineMessages({
     cursorTitle: 'Coordinate del cursore (passa sulla mappa)',
     coordFormatTitle: 'Clicca per cambiare formato coordinate (DD / DMS / MGRS)',
     sitrepTip: 'SITREP — rapporto situazionale',
+    symbolsTip: 'Simboli NATO (APP-6)',
     cursor: 'CURSORE',
     locationTitle: 'Nome della località (geocodifica inversa)',
     location: 'LUOGO',
@@ -389,6 +393,10 @@ export default function Dashboard() {
   const [showIntel, setShowIntel] = useState(false);
   const [showDrawing, setShowDrawing] = useState(false);
   const [showSitrep, setShowSitrep] = useState(false);
+  const [showSymbols, setShowSymbols] = useState(false);
+  const [milSymbols, setMilSymbols] = useState<PlacedSymbol[]>([]);
+  /** Symbol waiting for a map click, or null when not placing. */
+  const [pendingSymbol, setPendingSymbol] = useState<{ kindId: string; affiliation: Affiliation; echelon: Echelon; label?: string } | null>(null);
   const [drawMode, setDrawMode] = useState<DrawMode | null>(null);
   const [drawProgress, setDrawProgress] = useState<DrawProgress | null>(null);
   const [drawCommand, setDrawCommand] = useState<{ action: 'undo' | 'finish' | 'cancel'; seq: number } | null>(null);
@@ -742,6 +750,30 @@ export default function Dashboard() {
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, serializeShapes(drawnPolygons)); } catch { /* quota or private mode */ }
   }, [drawnPolygons]);
+
+  // ── NATO symbol annotations — same restore-and-save contract as the AOIs ──
+  useEffect(() => {
+    try {
+      const restored = deserializeSymbols(localStorage.getItem(SYMBOL_STORAGE_KEY));
+      if (restored.length) setMilSymbols(restored);
+    } catch { /* storage unavailable — start empty */ }
+  }, []);
+
+  useEffect(() => {
+    try { localStorage.setItem(SYMBOL_STORAGE_KEY, serializeSymbols(milSymbols)); } catch { /* quota or private mode */ }
+  }, [milSymbols]);
+
+  /** Drops the pending symbol where the operator clicked, then leaves placement mode. */
+  const placeSymbol = useCallback((coords: { lat: number; lng: number }) => {
+    setPendingSymbol(pending => {
+      if (!pending) return null;
+      setMilSymbols(prev => [
+        ...prev,
+        { ...pending, id: `sym-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`, lat: coords.lat, lng: coords.lng, createdAt: Date.now() },
+      ]);
+      return null;
+    });
+  }, []);
 
   // ── Tripwires ──
   // Re-sweep every watched AOI whenever live data refreshes and record what
@@ -1398,6 +1430,9 @@ export default function Dashboard() {
           theme={osirisTheme}
           arcgisLayers={arcgisLayers.filter(l => l.visible).map(l => ({ id: l.id, title: l.title, geojson: l.geojson, color: l.color, opacity: l.opacity }))}
           onMapCenter={setMapCenter}
+          milSymbols={milSymbols}
+          symbolPlacement={!!pendingSymbol}
+          onSymbolPlace={placeSymbol}
           route={activeRoute}
           userLocation={
             navSession && navProgress
@@ -1680,6 +1715,30 @@ export default function Dashboard() {
             )}
           </button>
           <span className="absolute right-11 top-1/2 -translate-y-1/2 px-2 py-1 text-[9px] font-mono tracking-wider text-white/80 bg-black/80 backdrop-blur-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">{t('drawLabel')}</span>
+        </div>
+
+        <div className="relative group">
+          <button onClick={() => { setShowSymbols(!showSymbols); if (showSymbols) setPendingSymbol(null); setShowIntel(false); setShowMarkets(false); setShowAlerts(false); setShowSpaceCam(false); setShowSitrep(false); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showSymbols ? 'bg-[var(--cyan-primary)]/20' : 'hover:bg-white/10'}`} title={t('symbolsTip')} aria-label={t('symbolsTip')} aria-expanded={showSymbols}>
+            <Crosshair className={`w-4 h-4 ${showSymbols ? 'text-[var(--cyan-primary)]' : 'text-white/60'}`} />
+            {showSymbols && (
+              <span aria-hidden="true" className="absolute -right-1 top-1/2 -translate-y-1/2 h-4 w-[2px] rounded-full bg-current text-[var(--cyan-primary)]" />
+            )}
+          </button>
+          <span className="absolute right-11 top-1/2 -translate-y-1/2 px-2 py-1 text-[9px] font-mono tracking-wider text-white/80 bg-black/80 backdrop-blur-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">APP-6</span>
+          <AnimatePresence>
+            {showSymbols && (
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="absolute right-12 top-1/2 -translate-y-1/2">
+                <MilSymbolPanel
+                  symbols={milSymbols}
+                  placing={!!pendingSymbol}
+                  onStartPlacing={setPendingSymbol}
+                  onCancelPlacing={() => setPendingSymbol(null)}
+                  onRemove={id => setMilSymbols(prev => prev.filter(x => x.id !== id))}
+                  onClear={() => setMilSymbols([])}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <div className="relative group">

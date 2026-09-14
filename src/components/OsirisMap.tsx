@@ -16,6 +16,7 @@ import { attachTerrain, type TerrainStatus } from '@/lib/map-terrain';
 
 import { applyMapProjection } from '@/lib/map-projection';
 import { defineMessages, localeOf, translate, useLang, type Vars } from '@/lib/i18n';
+import { symbolCanvas, symbolImageId, type PlacedSymbol } from '@/lib/milsym';
 
 /** The catalogue fields the satellite layer and its popup actually read. */
 interface SatelliteRow {
@@ -51,6 +52,11 @@ interface OsirisMapProps {
   theme?: 'core' | 'ghost';
   drawnPolygons?: Array<{ id: string; name: string; geojson: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.LineString>; color: string }>;
   arcgisLayers?: Array<{ id: string; title: string; geojson: any; color?: string; opacity?: number }>;
+  /** NATO (APP-6) symbols the operator has placed. */
+  milSymbols?: PlacedSymbol[];
+  /** While true the next map click drops a symbol instead of selecting. */
+  symbolPlacement?: boolean;
+  onSymbolPlace?: (coords: { lat: number; lng: number }) => void;
   /** Active draw mode, or null when not drawing. */
   drawMode?: DrawMode | null;
   onDrawProgress?: (p: DrawProgress | null) => void;
@@ -431,7 +437,7 @@ const MESSAGES = defineMessages({
 });
 type MsgKey = keyof typeof MESSAGES.en & string;
 
-function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightClick, onViewStateChange, flyToLocation, projection = 'globe', terrainEnabled = false, terrainRetry = 0, terrainFocus = 0, onTerrainStatusChange, mapStyle = 'dark', sweepData, scanTargets = [], demoMode = false, theme = 'core', drawnPolygons = [], arcgisLayers = [], drawMode = null, onDrawComplete, onDrawProgress, onDrawCancel, drawCommand = null, onMapCenter, route = null, userLocation = null, followUser = false, onFollowInterrupt, navigating = false, aircraftAirports = {} }: OsirisMapProps) {
+function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightClick, onViewStateChange, flyToLocation, projection = 'globe', terrainEnabled = false, terrainRetry = 0, terrainFocus = 0, onTerrainStatusChange, mapStyle = 'dark', sweepData, scanTargets = [], demoMode = false, theme = 'core', drawnPolygons = [], arcgisLayers = [], milSymbols = [], symbolPlacement = false, onSymbolPlace, drawMode = null, onDrawComplete, onDrawProgress, onDrawCancel, drawCommand = null, onMapCenter, route = null, userLocation = null, followUser = false, onFollowInterrupt, navigating = false, aircraftAirports = {} }: OsirisMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
@@ -442,6 +448,10 @@ function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightCl
   const langRef = useRef(lang);
   langRef.current = lang;
   const tr = useCallback((key: MsgKey, vars?: Vars) => translate(MESSAGES, langRef.current, key, vars), []);
+
+  // Kept in a ref so the placement listener is registered once per mode change.
+  const onSymbolPlaceRef = useRef(onSymbolPlace);
+  onSymbolPlaceRef.current = onSymbolPlace;
 
   // Do not replay an earlier explicit zoom request after theme/retry remounts.
   const lastTerrainFocus = useRef(terrainFocus);
@@ -653,7 +663,7 @@ function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightCl
       createDot(map, 'dot-fire', isGhost ? phantomPurple : '#E65100', 10);
       createDot(map, 'dot-cctv', cameraColor, 10);
 
-      const sources = ['flights','military','jets','private-fl','satellites','earthquakes','gdelt','day-night','cctv','fires','weather','infrastructure','maritime','maritime-choke','maritime-ships','live-news','conflict-zones', 'war-alerts-targets', 'war-alerts-lines', 'balloons', 'radiation', 'ip-sweep-devices', 'ip-sweep-pulse', 'ip-sweep-connections', 'scan-targets', 'sdk-entities', 'sdk-links', 'malware-nodes', 'malware-new', 'network-mesh', 'cyber-arcs', 'cyber-heads', 'cyber-impacts', 'gdelt-events', 'cf-outages', 'cf-attacks', 'gps-jamming', 'nav-warnings'];
+      const sources = ['flights','military','jets','private-fl','satellites','earthquakes','gdelt','day-night','cctv','fires','weather','infrastructure','maritime','maritime-choke','maritime-ships','live-news','conflict-zones', 'war-alerts-targets', 'war-alerts-lines', 'balloons', 'radiation', 'ip-sweep-devices', 'ip-sweep-pulse', 'ip-sweep-connections', 'scan-targets', 'sdk-entities', 'sdk-links', 'malware-nodes', 'malware-new', 'network-mesh', 'cyber-arcs', 'cyber-heads', 'cyber-impacts', 'gdelt-events', 'cf-outages', 'cf-attacks', 'gps-jamming', 'nav-warnings', 'mil-symbols'];
       sources.forEach(s => map.addSource(s, { type: 'geojson', data: EMPTY_FC }));
 
       // ── FLIGHT ROUTE VISUALIZATION SOURCES & LAYERS ──
@@ -904,6 +914,17 @@ function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightCl
         'text-size': 8.5, 'text-font': ['JetBrains Mono Bold', 'Open Sans Bold'],
         'text-offset': [0, 1.3], 'text-allow-overlap': false,
       }, paint: { 'text-color': '#4DD0E1', 'text-halo-color': '#000', 'text-halo-width': 1.4, 'text-opacity': 0.85 }});
+
+      /* ── NATO (APP-6) symbols placed by the operator ── */
+      map.addLayer({ id: 'mil-symbol-icons', type: 'symbol', source: 'mil-symbols', layout: {
+        'icon-image': ['get', 'icon'],
+        'icon-size': 1,
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
+        'text-field': ['get', 'label'],
+        'text-size': 10, 'text-font': ['JetBrains Mono Bold', 'Open Sans Bold'],
+        'text-offset': [0, 1.6], 'text-anchor': 'top', 'text-allow-overlap': false,
+      }, paint: { 'text-color': '#E8E6E0', 'text-halo-color': '#000', 'text-halo-width': 1.6 }});
 
       // Weather Events (NASA EONET) — deep violet
       map.addLayer({ id: 'weather-glow', type: 'circle', source: 'weather', paint: {
@@ -2231,6 +2252,47 @@ function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightCl
       properties: { navArea: w.navArea, msgNumber: w.msgNumber, msgYear: w.msgYear, category: w.category, text: w.text },
     })) : []);
   }, [mapReady, data.nav_warnings, (activeLayers as any).nav_warnings, setGeo]);
+
+  /* ── NATO (APP-6) symbols the operator placed ── */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    // One registered image per distinct symbol code. milsymbol draws to a
+    // canvas, which the style can take directly — no sprite sheet needed.
+    for (const sym of milSymbols) {
+      const icon = symbolImageId(sym);
+      if (map.hasImage(icon)) continue;
+      const canvas = symbolCanvas(sym, 34);
+      if (!canvas) continue;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) continue;
+      try {
+        map.addImage(icon, ctx.getImageData(0, 0, canvas.width, canvas.height), { pixelRatio: 2 });
+      } catch { /* a racing re-register is harmless */ }
+    }
+    setGeo('mil-symbols', milSymbols.map(sym => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [sym.lng, sym.lat] },
+      properties: { id: sym.id, icon: symbolImageId(sym), label: sym.label || '' },
+    })));
+  }, [mapReady, milSymbols, setGeo]);
+
+  /* ── Symbol placement: the next click drops one, then the panel exits the mode ── */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady || !symbolPlacement) return;
+    const previousCursor = map.getCanvas().style.cursor;
+    map.getCanvas().style.cursor = 'crosshair';
+    const onClick = (e: maplibregl.MapMouseEvent) => {
+      onSymbolPlaceRef.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+    };
+    map.on('click', onClick);
+    return () => {
+      map.off('click', onClick);
+      const canvas = map.getCanvas();
+      if (canvas) canvas.style.cursor = previousCursor;
+    };
+  }, [mapReady, symbolPlacement]);
 
   // Malware Threats
   useEffect(() => {

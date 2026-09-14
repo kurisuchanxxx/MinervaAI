@@ -10,7 +10,7 @@ import { formatAgo as watchAgo, type WatchEvent } from '@/lib/watch';
 import { contentsToCSV, contentsToGeoJSON, downloadFile } from '@/lib/aoi-export';
 import { FileDown, Table } from 'lucide-react';
 import { Radar, LogIn, LogOut } from 'lucide-react';
-import { defineMessages, useT } from '@/lib/i18n';
+import { defineMessages, localeOf, useLang, useT } from '@/lib/i18n';
 
 
 interface DrawingToolbarProps {
@@ -211,6 +211,8 @@ export default function DrawingToolbar({
   onRenamePolygon,
 }: DrawingToolbarProps) {
   const t = useT(MESSAGES);
+  const { lang } = useLang();
+  const locale = localeOf(lang);
   const [editingName, setEditingName] = useState<string | null>(null);
   const [nameValue, setNameValue] = useState('');
   const [copied, setCopied] = useState<string | null>(null);
@@ -336,13 +338,13 @@ export default function DrawingToolbar({
                     : t(MODE_HINT[drawMode])}
                 </span>
                 {progress && progress.radiusKm != null && progress.radiusKm > 0 && (
-                  <span className="text-[10px] font-mono text-white tabular-nums">r {formatDistance(progress.radiusKm)}</span>
+                  <span className="text-[10px] font-mono text-white tabular-nums">r {formatDistance(progress.radiusKm, locale)}</span>
                 )}
                 {progress && progress.areaKm2 > 0 && (
-                  <span className="text-[10px] font-mono text-white tabular-nums">{formatArea(progress.areaKm2)}</span>
+                  <span className="text-[10px] font-mono text-white tabular-nums">{formatArea(progress.areaKm2, locale)}</span>
                 )}
                 {progress && progress.areaKm2 === 0 && progress.lengthKm > 0 && (
-                  <span className="text-[10px] font-mono text-white tabular-nums">{formatDistance(progress.lengthKm)}</span>
+                  <span className="text-[10px] font-mono text-white tabular-nums">{formatDistance(progress.lengthKm, locale)}</span>
                 )}
               </div>
               <p className="text-[10px] font-mono text-white/40 mt-1 leading-relaxed">

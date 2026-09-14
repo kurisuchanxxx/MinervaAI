@@ -3,7 +3,7 @@
 import { Check, X, Undo2, MousePointerClick } from 'lucide-react';
 import type { DrawMode, DrawProgress } from '@/lib/draw';
 import { formatArea, formatDistance } from '@/lib/geo';
-import { defineMessages, useT } from '@/lib/i18n';
+import { defineMessages, localeOf, useLang, useT } from '@/lib/i18n';
 
 /**
  * MinervaAI — on-map drawing HUD
@@ -110,6 +110,8 @@ function step(t: Translate, mode: DrawMode, vertices: number): string {
 
 export default function DrawHud({ mode, progress, onUndo, onFinish, onCancel }: DrawHudProps) {
   const t = useT(MESSAGES);
+  const { lang } = useLang();
+  const locale = localeOf(lang);
   const vertices = progress?.vertices ?? 0;
   const canFinish = progress?.closable ?? false;
   // Two-click shapes complete themselves, so offering Finish would be a button
@@ -136,11 +138,11 @@ export default function DrawHud({ mode, progress, onUndo, onFinish, onCancel }: 
           {progress && (progress.areaKm2 > 0 || progress.lengthKm > 0) && (
             <span className="ml-1 flex items-center gap-2 border-l border-[var(--border-secondary)] pl-3 text-[12px] font-mono tabular-nums text-white">
               {progress.radiusKm != null && progress.radiusKm > 0 && (
-                <span>r {formatDistance(progress.radiusKm)}</span>
+                <span>r {formatDistance(progress.radiusKm, locale)}</span>
               )}
-              {progress.areaKm2 > 0 && <span>{formatArea(progress.areaKm2)}</span>}
+              {progress.areaKm2 > 0 && <span>{formatArea(progress.areaKm2, locale)}</span>}
               {progress.areaKm2 === 0 && progress.lengthKm > 0 && (
-                <span>{formatDistance(progress.lengthKm)}</span>
+                <span>{formatDistance(progress.lengthKm, locale)}</span>
               )}
             </span>
           )}

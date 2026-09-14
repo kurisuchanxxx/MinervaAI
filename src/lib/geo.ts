@@ -153,18 +153,24 @@ export function rectToRing(a: LngLat, b: LngLat): number[][] {
   ];
 }
 
-/** Compact distance for a readout: metres under 1 km, then km. */
-export function formatDistance(km: number): string {
+/**
+ * Compact distance for a readout: metres under 1 km, then km.
+ *
+ * The locale is explicit because the grouping separator has to follow the
+ * language the operator picked in the app, not whatever locale the machine
+ * running the code happens to have.
+ */
+export function formatDistance(km: number, locale = 'en-US'): string {
   if (km < 1) return `${Math.round(km * 1000)} m`;
   if (km < 100) return `${km.toFixed(1)} km`;
-  return `${Math.round(km).toLocaleString()} km`;
+  return `${Math.round(km).toLocaleString(locale)} km`;
 }
 
 /** Compact area for a readout: m² under a hectare, then km². */
-export function formatArea(km2: number): string {
-  if (km2 < 0.01) return `${Math.round(km2 * 1_000_000).toLocaleString()} m²`;
+export function formatArea(km2: number, locale = 'en-US'): string {
+  if (km2 < 0.01) return `${Math.round(km2 * 1_000_000).toLocaleString(locale)} m²`;
   if (km2 < 100) return `${km2.toFixed(2)} km²`;
-  return `${Math.round(km2).toLocaleString()} km²`;
+  return `${Math.round(km2).toLocaleString(locale)} km²`;
 }
 
 /** 0–360 to a 16-point compass label, for bearing readouts. */
