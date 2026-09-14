@@ -43,11 +43,23 @@ Variabili d'ambiente utili (tutte opzionali, vedi [`.env.example`](.env.example)
 | Variabile | A cosa serve |
 |-----------|--------------|
 | `NEXT_PUBLIC_SITE_URL` | URL pubblico del sito (metadati SEO / Open Graph) |
+| `AUTH_SECRET` / `MINERVA_USERS` | **Login per gli strumenti RECON** (senza, RECON resta bloccato) |
 | `SCANNER_URL` / `SCANNER_KEY` | Backend dello scanner RECON (senza, RECON risponde 503) |
 | `CLOUDFLARE_API_TOKEN` | Livelli "Internet Outages" e "Attack Origins" |
 | `ETHERSCAN_API_KEY` / `HELIUS_API_KEY` | Analisi wallet più approfondita |
 
 Senza chiavi API tutti i feed principali funzionano comunque, perché usano fonti pubbliche.
+
+### Accesso a RECON
+
+Gli strumenti RECON (scansioni, WHOIS, DNS, ricerca username, leak…) partono dal server, quindi richiedono un login.
+
+1. Genera utente e segreto (la password viene chiesta in modo nascosto e non viene salvata):
+   ```bash
+   node tools/hash-password.mjs nomeutente
+   ```
+2. In Vercel → *Settings → Environment Variables* aggiungi `AUTH_SECRET` e `MINERVA_USERS` con i valori stampati (più utenti: separali con una virgola).
+3. Ripubblica il progetto. Per revocare un utente, rimuovi la sua voce da `MINERVA_USERS`; per disconnettere tutti, cambia `AUTH_SECRET`.
 
 ### Crediti
 

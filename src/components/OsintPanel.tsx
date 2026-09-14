@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { ipToNumber, numberToIp, calculateSubnetStart, classifyDevice, assessRisk, batchFetch, ShodanInternetDBResponse, SweepDevice } from '@/lib/osint-utils';
 import ChainBrief from '@/components/ChainBrief';
+import ReconGate, { ReconSessionControls, useReconSession } from '@/components/ReconGate';
 import { defineMessages, useT, useLang, localeOf } from '@/lib/i18n';
 
 const MESSAGES = defineMessages({
@@ -462,6 +463,7 @@ function OsintPanelInner({ isMobile, onSweepVisualize, onScanGeolocate }: OsintP
   const t = useT(MESSAGES);
   const { lang } = useLang();
   const locale = localeOf(lang);
+  const { handleUnauthorized } = useReconSession();
 
   const selectTool = useCallback((id: string) => {
     setActiveTab(id);
@@ -503,7 +505,7 @@ function OsintPanelInner({ isMobile, onSweepVisualize, onScanGeolocate }: OsintP
     });
     // Fetch in parallel
     const results = await Promise.allSettled(
-      missing.map(id => fetch(`/api/osint/cve?cve=${encodeURIComponent(id)}`).then(r => r.json()).then(data => ({ id, data })))
+      missing.map(id => fetch(`/api/osint/cve?cve=${encodeURIComponent(id)}`).then(r => { handleUnauthorized(r); return r.json(); }).then(data => ({ id, data })))
     );
     setCveCache(prev => {
       const next = { ...prev };
@@ -560,6 +562,7 @@ function OsintPanelInner({ isMobile, onSweepVisualize, onScanGeolocate }: OsintP
       try {
         const t0 = Date.now();
         const res = await fetch(`/api/osint/sweep?ip=${encodeURIComponent(query)}&cidr=${cidr}`);
+        if (handleUnauthorized(res)) { setSweepProgress(null); return; }
         if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || t('errSweepFailed', { status: res.status })); }
         const initData = await res.json();
 
@@ -646,6 +649,7 @@ function OsintPanelInner({ isMobile, onSweepVisualize, onScanGeolocate }: OsintP
         case 'shodan': url = `https://internetdb.shodan.io/${encodeURIComponent(query)}`; break;
       }
       const res = await fetch(url, activeTab === 'shodan' ? { cache: 'no-store' } : undefined);
+      if (activeTab !== 'shodan' && handleUnauthorized(res)) return;
       if (activeTab === 'shodan' && res.status === 404) {
         setResults({ ip: query, status: t('shodanNoRecords'), ports: [], cpes: [], hostnames: [], tags: [], vulns: [] });
         setLoading(false);
@@ -705,7 +709,7 @@ function OsintPanelInner({ isMobile, onSweepVisualize, onScanGeolocate }: OsintP
       }
     } catch { setError(t('errNetwork')); }
     finally { setLoading(false); }
-  }, [query, activeTab, scanType, loading, sweepCidr, t, locale]);
+  }, [query, activeTab, scanType, loading, sweepCidr, t, locale, handleUnauthorized]);
 
   const currentTab = TABS.find(tool => tool.id === activeTab);
   const tabLabel = (id: string) => {
@@ -2114,9 +2118,12 @@ function OsintPanelInner({ isMobile, onSweepVisualize, onScanGeolocate }: OsintP
                 </>
               )}
             </div>
+            <div className="flex items-center gap-3 flex-shrink-0">
+            <ReconSessionControls size="lg" />
             <button onClick={() => setIsFullScreen(false)} className="p-2 hover:bg-white/5 rounded transition-colors text-[var(--text-muted)] hover:text-white flex-shrink-0" title={t('exitExpanded')}>
               <Minimize2 className="w-5 h-5" />
             </button>
+            </div>
           </div>
 
           {/* Two panes: the toolkit stays visible while results use the width. */}
@@ -2156,6 +2163,7 @@ function OsintPanelInner({ isMobile, onSweepVisualize, onScanGeolocate }: OsintP
           <span className="gotham-tag gotham-tag--info" style={{ fontSize: '9px', padding: '1px 5px' }}>{t('toolsCount', { n: TABS.length })}</span>
         </button>
         <div className="flex items-center gap-3">
+          <ReconSessionControls />
           <button onClick={() => setIsFullScreen(true)} className="p-1.5 -m-0.5 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/10 transition-colors" title={t('fullScreen')}>
              <Maximize2 className="w-3.5 h-3.5" />
           </button>
@@ -2176,5 +2184,12 @@ function OsintPanelInner({ isMobile, onSweepVisualize, onScanGeolocate }: OsintP
   );
 }
 
-const OsintPanel = memo(OsintPanelInner);
+/** The toolkit only mounts once the RECON session is established. */
+const OsintPanel = memo(function OsintPanel(props: OsintPanelProps) {
+  return (
+    <ReconGate>
+      <OsintPanelInner {...props} />
+    </ReconGate>
+  );
+});
 export default OsintPanel;

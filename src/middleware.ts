@@ -1,8 +1,30 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest, NextFetchEvent } from 'next/server';
+import { authMode, isProtectedApiPath, SESSION_COOKIE, verifySessionToken } from '@/lib/auth/session';
 
-export function middleware(request: NextRequest, event: NextFetchEvent) {
+/** RECON endpoints scan and look up third parties from this server's IP, so they need a session. */
+async function guardRecon(request: NextRequest) {
+  const mode = authMode();
+  if (mode === 'disabled') return NextResponse.next();
+  if (mode === 'unconfigured') {
+    return NextResponse.json(
+      { error: 'RECON access is not configured on this deployment (AUTH_SECRET / MINERVA_USERS).', code: 'auth_unconfigured' },
+      { status: 503, headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
+  const session = await verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
+  if (!session) {
+    return NextResponse.json(
+      { error: 'Login required for RECON tools.', code: 'auth_required' },
+      { status: 401, headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
+  return NextResponse.next();
+}
+
+export async function middleware(request: NextRequest, event: NextFetchEvent) {
   const url = request.nextUrl.pathname;
+  if (isProtectedApiPath(url)) return guardRecon(request);
   
   const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '127.0.0.1';
   const userAgent = request.headers.get('user-agent') || 'Unknown MinervaAI Client';
@@ -54,6 +76,10 @@ export function middleware(request: NextRequest, event: NextFetchEvent) {
    map's critical path. Analytics wants page views; asset fetches are not one. */
 export const config = {
   matcher: [
+    // RECON API — session-gated, no analytics.
+    '/api/osint/:path*',
+    '/api/scanner',
+    '/api/scanner/:path*',
     '/((?!api|_next/static|_next/image|vendor|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mjs|js|css|json|pbf|mvt|woff|woff2|ico|txt)$).*)',
   ],
 }

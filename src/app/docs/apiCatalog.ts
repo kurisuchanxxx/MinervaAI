@@ -446,9 +446,9 @@ export const API_GROUPS: ApiGroup[] = [
     title: 'OSINT Toolkit',
     titleIt: 'Toolkit OSINT',
     blurb:
-      'The lookup tools behind the RECON panel. Every route takes a single subject and returns a normalised result, so they compose well in scripts.',
+      'The lookup tools behind the RECON panel. Every route takes a single subject and returns a normalised result, so they compose well in scripts. They require sign-in: once signed in to the RECON panel the session cookie is sent automatically; otherwise they answer 401.',
     blurbIt:
-      'Gli strumenti di lookup dietro il pannello RECON. Ogni route accetta un singolo soggetto e restituisce un risultato normalizzato, quindi si combinano bene negli script.',
+      'Gli strumenti di lookup dietro il pannello RECON. Ogni route accetta un singolo soggetto e restituisce un risultato normalizzato, quindi si combinano bene negli script. Richiedono l’accesso: con il browser autenticato nel pannello RECON il cookie di sessione viene inviato automaticamente, altrimenti rispondono 401.',
     endpoints: [
       {
         path: '/api/osint/dns',
@@ -598,8 +598,8 @@ export const API_GROUPS: ApiGroup[] = [
     id: 'recon',
     title: 'Recon Scanner',
     titleIt: 'Scanner Recon',
-    blurb: 'Active scanning, delegated to a separate backend so the web tier never runs scans itself.',
-    blurbIt: 'Scansione attiva, delegata a un backend separato: il livello web non esegue mai scansioni direttamente.',
+    blurb: 'Active scanning, delegated to a separate backend so the web tier never runs scans itself. Requires a RECON sign-in (401 otherwise).',
+    blurbIt: 'Scansione attiva, delegata a un backend separato: il livello web non esegue mai scansioni direttamente. Richiede l’accesso a RECON (altrimenti 401).',
     endpoints: [
       {
         path: '/api/scanner',
