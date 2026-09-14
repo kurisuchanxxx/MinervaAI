@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plane, Satellite, Sun, AlertTriangle, Camera,
   CloudLightning, Ship, Network, Database, Ghost,
-  Flame, Tv, Radio, Mountain, Anchor, Megaphone, SlidersHorizontal
+  Flame, Tv, Radio, Mountain, Anchor, Megaphone, SlidersHorizontal, RadioTower
 } from 'lucide-react';
 import StyleStudio from './StyleStudio';
 import { TERRAIN_MIN_ZOOM, type TerrainStatus } from '@/lib/map-terrain';
@@ -48,6 +48,11 @@ const MESSAGES = defineMessages({
     cyberAttacks: 'Live Attacks',
     cfOutages: 'Internet Outages',
     cfAttacks: 'Attack Origins',
+    groupSignals: 'SIGNALS & OPS',
+    gpsJamming: 'GPS Interference',
+    gpsJammingDesc: 'Zones where aircraft report degraded satellite navigation (low ADS-B NACp).',
+    navWarnings: 'Nav Warnings',
+    navWarningsDesc: 'NGA NAVAREA maritime warnings: firing, missile/space launch, GNSS interference.',
     dayNight: 'Day / Night Cycle',
     buildings3d: '3D Buildings',
     buildings3dDesc: 'City detail · zoom 14.5+',
@@ -106,6 +111,11 @@ const MESSAGES = defineMessages({
     cyberAttacks: 'Attacchi live',
     cfOutages: 'Interruzioni Internet',
     cfAttacks: 'Origini attacchi',
+    groupSignals: 'SEGNALI & OPS',
+    gpsJamming: 'Disturbo GPS',
+    gpsJammingDesc: 'Zone dove gli aerei segnalano navigazione satellitare degradata (NACp ADS-B basso).',
+    navWarnings: 'Avvisi navigazione',
+    navWarningsDesc: 'Avvisi marittimi NAVAREA della NGA: tiri, lanci missilistici/spaziali, disturbo GNSS.',
     dayNight: 'Ciclo giorno / notte',
     buildings3d: 'Edifici 3D',
     buildings3dDesc: 'Dettaglio città · zoom 14.5+',
@@ -259,6 +269,15 @@ const LAYER_GROUPS: LayerGroupDef[] = [
     layers: [
       { key: 'cf_outages', label: 'cfOutages', dataKey: 'cf_outages', requires: 'cloudflare' },
       { key: 'cf_attacks', label: 'cfAttacks', dataKey: 'cf_attack_origins', requires: 'cloudflare' },
+    ],
+  },
+  {
+    label: 'SIGNALS',
+    fullLabel: 'groupSignals',
+    icon: RadioTower,
+    layers: [
+      { key: 'gps_jamming', label: 'gpsJamming', description: 'gpsJammingDesc', dataKey: 'gps_jamming' },
+      { key: 'nav_warnings', label: 'navWarnings', description: 'navWarningsDesc', dataKey: 'nav_warnings' },
     ],
   },
   {

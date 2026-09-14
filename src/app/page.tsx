@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Layers, BarChart3, Newspaper, Search, X, Globe, MapPinned, Route, Radar, Satellite, Moon, ExternalLink, AlertTriangle, Activity, Database, Wifi, Play, Network, Crosshair, Bluetooth, Pentagon, Radio , PenLine } from 'lucide-react';
+import { Layers, BarChart3, Newspaper, Search, X, Globe, MapPinned, Route, Radar, Satellite, Moon, ExternalLink, AlertTriangle, Activity, Database, Wifi, Play, Network, Crosshair, Bluetooth, Pentagon, Radio , PenLine, FileText } from 'lucide-react';
 import { type TerrainStatus } from '@/lib/map-terrain';
 import { loadCameraCatalog, mergeCameraCatalog } from '@/lib/camera-catalog';
 import IntelFeed from '@/components/IntelFeed';
@@ -18,6 +18,7 @@ import type { LiveDetection } from '@/lib/malware-intel';
 import ScaleBar from '@/components/ScaleBar';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { applySettings, loadSavedSettings } from '@/lib/style-tokens';
+import { COORD_FORMAT_STORAGE_KEY, COORD_FORMATS, coordFormatLabel, formatCoord, isCoordFormat, type CoordFormat } from '@/lib/coords';
 import SharePanel from '@/components/SharePanel';
 import ViewPresets from '@/components/ViewPresets';
 import KeyboardShortcuts from '@/components/KeyboardShortcuts';
@@ -26,6 +27,7 @@ import LiveAlerts from '@/components/LiveAlerts';
 import WorldRemote from '@/components/WorldRemote';
 import ArcGISPanel from '@/components/ArcGISPanel';
 import MinervaLogo from '@/components/MinervaLogo';
+const SitrepPanel = dynamic(() => import('@/components/SitrepPanel'));
 import { LanguageToggle, defineMessages, useT, useLang, translate, localeOf } from '@/lib/i18n';
 const OsirisMap = dynamic(() => import('@/components/OsirisMap'), { ssr: false });
 const LayerPanel = dynamic(() => import('@/components/LayerPanel'));
@@ -138,6 +140,8 @@ const MESSAGES = defineMessages({
     statWx: 'WX',
     statNuc: 'NUC',
     cursorTitle: 'Cursor coordinates (hover over map)',
+    coordFormatTitle: 'Click to switch coordinate format (DD / DMS / MGRS)',
+    sitrepTip: 'SITREP — situational report',
     cursor: 'CURSOR',
     locationTitle: 'Reverse-geocoded location name',
     location: 'LOCATION',
@@ -237,6 +241,8 @@ const MESSAGES = defineMessages({
     statWx: 'METEO',
     statNuc: 'NUC',
     cursorTitle: 'Coordinate del cursore (passa sulla mappa)',
+    coordFormatTitle: 'Clicca per cambiare formato coordinate (DD / DMS / MGRS)',
+    sitrepTip: 'SITREP — rapporto situazionale',
     cursor: 'CURSORE',
     locationTitle: 'Nome della località (geocodifica inversa)',
     location: 'LUOGO',
@@ -353,6 +359,21 @@ export default function Dashboard() {
   const mouseCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
   const coordsDisplayRef = useRef<HTMLDivElement>(null);
   const [locationLabel, setLocationLabel] = useState('');
+  const [coordFormat, setCoordFormat] = useState<CoordFormat>('dd');
+  const coordFormatRef = useRef<CoordFormat>('dd');
+  coordFormatRef.current = coordFormat;
+  useEffect(() => {
+    try { const saved = localStorage.getItem(COORD_FORMAT_STORAGE_KEY); if (isCoordFormat(saved)) setCoordFormat(saved); } catch { /* private mode */ }
+  }, []);
+  const cycleCoordFormat = useCallback(() => {
+    setCoordFormat(prev => {
+      const next = COORD_FORMATS[(COORD_FORMATS.indexOf(prev) + 1) % COORD_FORMATS.length];
+      try { localStorage.setItem(COORD_FORMAT_STORAGE_KEY, next); } catch { /* private mode */ }
+      const c = mouseCoordsRef.current;
+      if (c && coordsDisplayRef.current) coordsDisplayRef.current.innerText = formatCoord(c.lat, c.lng, next);
+      return next;
+    });
+  }, []);
   const [regionDossier, setRegionDossier] = useState<any>(null);
   const [dossierLoading, setDossierLoading] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
@@ -367,6 +388,7 @@ export default function Dashboard() {
   const [showScmPanel, setShowScmPanel] = useState(true);
   const [showIntel, setShowIntel] = useState(false);
   const [showDrawing, setShowDrawing] = useState(false);
+  const [showSitrep, setShowSitrep] = useState(false);
   const [drawMode, setDrawMode] = useState<DrawMode | null>(null);
   const [drawProgress, setDrawProgress] = useState<DrawProgress | null>(null);
   const [drawCommand, setDrawCommand] = useState<{ action: 'undo' | 'finish' | 'cancel'; seq: number } | null>(null);
@@ -533,6 +555,8 @@ export default function Dashboard() {
     gdelt_events: false,
     cf_outages: false,
     cf_attacks: false,
+    gps_jamming: false,
+    nav_warnings: false,
   });
   // Server-side capability flags — gate layers that need credentials.
   const selectFlatMap = () => {
@@ -660,7 +684,7 @@ export default function Dashboard() {
   const handleMouseCoords = useCallback((coords: { lat: number; lng: number }) => {
     mouseCoordsRef.current = coords;
     if (coordsDisplayRef.current) {
-      coordsDisplayRef.current.innerText = `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`;
+      coordsDisplayRef.current.innerText = formatCoord(coords.lat, coords.lng, coordFormatRef.current);
     }
     if (geocodeTimer.current) clearTimeout(geocodeTimer.current);
     geocodeTimer.current = setTimeout(async () => {
@@ -860,7 +884,7 @@ export default function Dashboard() {
   useEffect(() => {
 
     // Flights
-    if (activeLayers.flights || activeLayers.military || activeLayers.jets || activeLayers.private) {
+    if (activeLayers.flights || activeLayers.military || activeLayers.jets || activeLayers.private || (activeLayers as any).gps_jamming) {
       if (!layerFetchedRef.current.has('flights')) {
         fetchEndpoint('/api/flights');
         layerFetchedRef.current.add('flights');
@@ -956,6 +980,11 @@ export default function Dashboard() {
     // GDELT 2.0 geocoded events
     if ((activeLayers as any).gdelt_events) {
       loadLayerOnce('gdelt_events', '/api/gdelt-events?limit=600', d => ({ gdelt_events: d.events }));
+    }
+
+    // NGA NAVAREA navigational warnings
+    if ((activeLayers as any).nav_warnings) {
+      loadLayerOnce('nav_warnings', '/api/nav-warnings', d => ({ nav_warnings: d.warnings ?? [] }));
     }
 
     // Cloudflare Radar — one request backs both layers
@@ -1654,6 +1683,23 @@ export default function Dashboard() {
         </div>
 
         <div className="relative group">
+          <button onClick={() => { setShowSitrep(!showSitrep); setShowIntel(false); setShowMarkets(false); setShowAlerts(false); setShowSpaceCam(false); setShowDrawing(false); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showSitrep ? 'bg-[var(--gold-primary)]/20' : 'hover:bg-white/10'}`} title={t('sitrepTip')} aria-label={t('sitrepTip')} aria-expanded={showSitrep}>
+            <FileText className={`w-4 h-4 ${showSitrep ? 'text-[var(--gold-primary)]' : 'text-white/60'}`} />
+            {showSitrep && (
+              <span aria-hidden="true" className="absolute -right-1 top-1/2 -translate-y-1/2 h-4 w-[2px] rounded-full bg-current text-[var(--gold-primary)]" />
+            )}
+          </button>
+          <span className="absolute right-11 top-1/2 -translate-y-1/2 px-2 py-1 text-[9px] font-mono tracking-wider text-white/80 bg-black/80 backdrop-blur-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">SITREP</span>
+          <AnimatePresence>
+            {showSitrep && (
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="absolute right-12 top-1/2 -translate-y-1/2">
+                <SitrepPanel data={data} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <div className="relative group">
           <button onClick={() => { setShowDirections(!showDirections); if (showDirections) { setActiveRoute(null); } setShowDesktopSearch(false); setShowIntel(false); setShowMarkets(false); setShowAlerts(false); setShowSpaceCam(false); setShowDrawing(false); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showDirections ? 'bg-[var(--gold-primary)]/20' : 'hover:bg-white/10'}`} title={t('directionsTitle')} aria-label={t('directionsAria')} aria-expanded={showDirections}>
             <Route className={`w-4 h-4 ${showDirections ? 'text-[var(--gold-primary)]' : 'text-white/60'}`} />
             {showDirections && (
@@ -1967,10 +2013,11 @@ export default function Dashboard() {
       {!isMobile && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 3, duration: 0.8 }} className="desktop-only absolute bottom-8 z-[200] pointer-events-auto" style={{ left: '72px' }}>
           <div className="flex items-center gap-5 text-[9px] font-mono tracking-widest text-[var(--text-muted)] opacity-60">
-            <div className="flex gap-2 items-center" title={t('cursorTitle')}>
+            <button type="button" onClick={cycleCoordFormat} className="flex gap-2 items-center hover:text-[var(--text-primary)] transition-colors pointer-events-auto" title={t('coordFormatTitle')}>
               <span>{t('cursor')}</span>
               <span ref={coordsDisplayRef} className="text-[var(--gold-primary)] font-bold tabular-nums">—</span>
-            </div>
+              <span className="text-[var(--cyan-primary)]/70 text-[8px] border border-[var(--cyan-primary)]/30 rounded px-1 py-[1px]">{coordFormatLabel(coordFormat)}</span>
+            </button>
             <div className="flex gap-2 items-center" title={t('locationTitle')}>
               <span>{t('location')}</span>
               <span className="text-[var(--cyan-primary)] truncate max-w-[200px]">{locationLabel || t('hoverMap')}</span>

@@ -161,6 +161,16 @@ const MESSAGES = defineMessages({
     sourceArticle: 'SOURCE ARTICLE',
     // Cloudflare outages
     ongoingOutage: 'ONGOING OUTAGE',
+    gpsJamTitle: 'GPS INTERFERENCE ZONE',
+    gpsJamSeverity: 'Severity',
+    gpsJamAircraft: 'Aircraft affected',
+    gpsJamNote: 'Aircraft here report degraded satellite navigation (low ADS-B position accuracy).',
+    navWarn_gnss: 'GNSS INTERFERENCE',
+    navWarn_missile: 'MISSILE / LAUNCH',
+    navWarn_firing: 'FIRING EXERCISE',
+    navWarn_military: 'MILITARY ACTIVITY',
+    navWarn_general: 'NAV WARNING',
+    navWarnSource: 'NAVAREA warning',
     resolvedOutage: 'RESOLVED OUTAGE',
     cause: 'Cause',
     unspecified: 'Unspecified',
@@ -314,6 +324,16 @@ const MESSAGES = defineMessages({
     country: 'Paese',
     sourceArticle: 'ARTICOLO FONTE',
     ongoingOutage: 'INTERRUZIONE IN CORSO',
+    gpsJamTitle: 'ZONA DI DISTURBO GPS',
+    gpsJamSeverity: 'Gravità',
+    gpsJamAircraft: 'Aerei interessati',
+    gpsJamNote: 'Gli aerei qui segnalano navigazione satellitare degradata (bassa accuratezza di posizione ADS-B).',
+    navWarn_gnss: 'DISTURBO GNSS',
+    navWarn_missile: 'MISSILE / LANCIO',
+    navWarn_firing: 'ESERCITAZIONE A FUOCO',
+    navWarn_military: 'ATTIVITÀ MILITARE',
+    navWarn_general: 'AVVISO NAVIGAZIONE',
+    navWarnSource: 'Avviso NAVAREA',
     resolvedOutage: 'INTERRUZIONE RISOLTA',
     cause: 'Causa',
     unspecified: 'Non specificata',
@@ -633,7 +653,7 @@ function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightCl
       createDot(map, 'dot-fire', isGhost ? phantomPurple : '#E65100', 10);
       createDot(map, 'dot-cctv', cameraColor, 10);
 
-      const sources = ['flights','military','jets','private-fl','satellites','earthquakes','gdelt','day-night','cctv','fires','weather','infrastructure','maritime','maritime-choke','maritime-ships','live-news','conflict-zones', 'war-alerts-targets', 'war-alerts-lines', 'balloons', 'radiation', 'ip-sweep-devices', 'ip-sweep-pulse', 'ip-sweep-connections', 'scan-targets', 'sdk-entities', 'sdk-links', 'malware-nodes', 'malware-new', 'network-mesh', 'cyber-arcs', 'cyber-heads', 'cyber-impacts', 'gdelt-events', 'cf-outages', 'cf-attacks'];
+      const sources = ['flights','military','jets','private-fl','satellites','earthquakes','gdelt','day-night','cctv','fires','weather','infrastructure','maritime','maritime-choke','maritime-ships','live-news','conflict-zones', 'war-alerts-targets', 'war-alerts-lines', 'balloons', 'radiation', 'ip-sweep-devices', 'ip-sweep-pulse', 'ip-sweep-connections', 'scan-targets', 'sdk-entities', 'sdk-links', 'malware-nodes', 'malware-new', 'network-mesh', 'cyber-arcs', 'cyber-heads', 'cyber-impacts', 'gdelt-events', 'cf-outages', 'cf-attacks', 'gps-jamming', 'nav-warnings'];
       sources.forEach(s => map.addSource(s, { type: 'geojson', data: EMPTY_FC }));
 
       // ── FLIGHT ROUTE VISUALIZATION SOURCES & LAYERS ──
@@ -852,6 +872,38 @@ function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightCl
         'text-size': 9, 'text-font': ['JetBrains Mono Bold', 'Open Sans Bold'],
         'text-offset': [0, 1.6], 'text-allow-overlap': false,
       }, paint: { 'text-color': '#FF6B6B', 'text-halo-color': '#000', 'text-halo-width': 1.5, 'text-opacity': 0.9 }});
+
+      /* ── GPS interference — zones where aircraft report degraded satellite nav (low NACp) ── */
+      map.addLayer({ id: 'gps-jamming-heat', type: 'circle', source: 'gps-jamming', paint: {
+        'circle-radius': ['interpolate',['linear'],['zoom'], 1,18, 4,34, 8,60],
+        'circle-color': '#FFC400',
+        'circle-opacity': ['interpolate',['linear'],['get','severity'], 0,0.05, 100,0.28],
+        'circle-blur': 1,
+      }});
+      map.addLayer({ id: 'gps-jamming-core', type: 'circle', source: 'gps-jamming', paint: {
+        'circle-radius': ['interpolate',['linear'],['zoom'], 1,5, 4,8, 8,12],
+        'circle-color': '#FFC400', 'circle-opacity': 0.55,
+        'circle-stroke-width': 1.5, 'circle-stroke-color': '#7A5B00', 'circle-stroke-opacity': 0.8,
+      }});
+      map.addLayer({ id: 'gps-jamming-label', type: 'symbol', source: 'gps-jamming', minzoom: 3, layout: {
+        'text-field': ['concat', ['to-string',['get','severity']], '%'],
+        'text-size': 9, 'text-font': ['JetBrains Mono Bold', 'Open Sans Bold'],
+        'text-offset': [0, 1.3], 'text-allow-overlap': false,
+      }, paint: { 'text-color': '#FFC400', 'text-halo-color': '#000', 'text-halo-width': 1.4, 'text-opacity': 0.85 }});
+
+      /* ── NAVAREA navigational warnings (NGA) — coloured by kind ── */
+      map.addLayer({ id: 'nav-warn-dots', type: 'circle', source: 'nav-warnings', paint: {
+        'circle-radius': ['interpolate',['linear'],['zoom'], 1,4, 5,7, 10,10],
+        'circle-color': ['match',['get','category'],
+          'gnss','#FFC400', 'missile','#FF3D3D', 'firing','#FF6B00', 'military','#E040FB', '#00B8D4'],
+        'circle-opacity': 0.9,
+        'circle-stroke-width': 1.4, 'circle-stroke-color': '#000', 'circle-stroke-opacity': 0.7,
+      }});
+      map.addLayer({ id: 'nav-warn-label', type: 'symbol', source: 'nav-warnings', minzoom: 4, layout: {
+        'text-field': ['concat', 'NAVAREA ', ['get','navArea'], ' ', ['to-string',['get','msgNumber']]],
+        'text-size': 8.5, 'text-font': ['JetBrains Mono Bold', 'Open Sans Bold'],
+        'text-offset': [0, 1.3], 'text-allow-overlap': false,
+      }, paint: { 'text-color': '#4DD0E1', 'text-halo-color': '#000', 'text-halo-width': 1.4, 'text-opacity': 0.85 }});
 
       // Weather Events (NASA EONET) — deep violet
       map.addLayer({ id: 'weather-glow', type: 'circle', source: 'weather', paint: {
@@ -1308,7 +1360,7 @@ function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightCl
       'gdelt-dots','weather-dots','infra-dots','maritime-dots','choke-dots','news-dots',
       'balloon-dots','rad-dots','ship-dots','sweep-device-dots','scan-targets-dots',
       'sdk-sea','sdk-air','sdk-intel','malware-dots','cyber-heads','gdelt-events-dots',
-      'cf-outage-dots','cf-attack-dots','flight-dots','military-dots','jet-dots','private-dots']);
+      'cf-outage-dots','cf-attack-dots','gps-jamming-core','nav-warn-dots','flight-dots','military-dots','jet-dots','private-dots']);
 
     // Satellites are picked on the GPU: the pick pass runs the same vertex
     // shader as the visible one, so the target is always exactly where the
@@ -1518,6 +1570,43 @@ function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightCl
         <div style="margin-top:8px;font-size:9px;color:#5C5A54;line-height:1.5;">
           ${tr('attackShareNote')} · Cloudflare Radar
         </div>
+      </div>`);
+    });
+
+    // ── GPS interference zone ──
+    map.on('click', 'gps-jamming-core', e => {
+      if (!e.features?.length) return;
+      const p = e.features[0].properties as any;
+      const coords = (e.features[0].geometry as any).coordinates;
+      popup(coords, `
+      <div style="${pStyle}border:1px solid rgba(255,196,0,0.4);min-width:230px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="width:7px;height:7px;border-radius:50%;background:#FFC400;box-shadow:0 0 8px #FFC400;"></span>
+          <span style="color:#FFC400;font-size:10px;font-weight:700;letter-spacing:0.15em;">${tr('gpsJamTitle')}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:10px;color:#9B978E;">
+          <span style="opacity:0.6;">${tr('gpsJamSeverity')}</span><span style="color:#FFC400;font-weight:700;">${htmlEsc(p.severity)}%</span>
+          <span style="opacity:0.6;">${tr('gpsJamAircraft')}</span><span style="color:#E8E6E0;">${htmlEsc(p.count)}</span>
+        </div>
+        <div style="margin-top:8px;font-size:9px;color:#5C5A54;line-height:1.5;">${tr('gpsJamNote')}</div>
+      </div>`);
+    });
+
+    // ── NAVAREA navigational warning ──
+    map.on('click', 'nav-warn-dots', e => {
+      if (!e.features?.length) return;
+      const p = e.features[0].properties as any;
+      const coords = (e.features[0].geometry as any).coordinates;
+      const catColor = ({ gnss:'#FFC400', missile:'#FF3D3D', firing:'#FF6B00', military:'#E040FB' } as Record<string,string>)[p.category] || '#00B8D4';
+      popup(coords, `
+      <div style="${pStyle}border:1px solid ${catColor}66;min-width:260px;max-width:320px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="width:7px;height:7px;border-radius:50%;background:${catColor};box-shadow:0 0 8px ${catColor};"></span>
+          <span style="color:${catColor};font-size:10px;font-weight:700;letter-spacing:0.15em;">${tr('navWarn_'+p.category as MsgKey)}</span>
+        </div>
+        <div style="color:#E8E6E0;font-size:12px;font-weight:700;margin-bottom:6px;">NAVAREA ${htmlEsc(p.navArea)} · ${htmlEsc(p.msgNumber)}/${htmlEsc(p.msgYear)}</div>
+        <div style="color:#9B978E;font-size:10px;line-height:1.55;max-height:170px;overflow:auto;white-space:pre-wrap;">${htmlEsc(p.text)}</div>
+        <div style="margin-top:8px;font-size:9px;color:#5C5A54;">${tr('navWarnSource')} · NGA MSI</div>
       </div>`);
     });
 
@@ -2121,6 +2210,28 @@ function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightCl
     })) : []);
   }, [mapReady, data.cf_attack_origins, (activeLayers as any).cf_attacks, setGeo]);
 
+  /* ── GPS interference zones (from the flights feed) ── */
+  useEffect(() => {
+    if (!mapReady) return;
+    const al = activeLayers as any;
+    setGeo('gps-jamming', al.gps_jamming && Array.isArray(data.gps_jamming) ? data.gps_jamming.map((z: any) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [z.lng, z.lat] },
+      properties: { severity: z.severity, count: z.count },
+    })) : []);
+  }, [mapReady, data.gps_jamming, (activeLayers as any).gps_jamming, setGeo]);
+
+  /* ── NAVAREA navigational warnings ── */
+  useEffect(() => {
+    if (!mapReady) return;
+    const al = activeLayers as any;
+    setGeo('nav-warnings', al.nav_warnings && Array.isArray(data.nav_warnings) ? data.nav_warnings.map((w: any) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [w.lng, w.lat] },
+      properties: { navArea: w.navArea, msgNumber: w.msgNumber, msgYear: w.msgYear, category: w.category, text: w.text },
+    })) : []);
+  }, [mapReady, data.nav_warnings, (activeLayers as any).nav_warnings, setGeo]);
+
   // Malware Threats
   useEffect(() => {
     if (!mapReady) return;
@@ -2453,6 +2564,8 @@ function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightCl
     setVis(['gdelt-events-dots'], (activeLayers as any).gdelt_events);
     setVis(['cf-outage-halo','cf-outage-dots','cf-outage-label'], (activeLayers as any).cf_outages);
     setVis(['cf-attack-dots','cf-attack-label'], (activeLayers as any).cf_attacks);
+    setVis(['gps-jamming-heat','gps-jamming-core','gps-jamming-label'], (activeLayers as any).gps_jamming);
+    setVis(['nav-warn-dots','nav-warn-label'], (activeLayers as any).nav_warnings);
 
     setVis(['malware-glow','malware-dots','malware-label','malware-new-ring'], activeLayers.malware);
     setVis(['network-mesh-atmo', 'network-mesh-glow', 'network-mesh-core'], activeLayers.internet_outages || activeLayers.malware);
