@@ -3,20 +3,49 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Keyboard, X } from 'lucide-react';
+import { defineMessages, useT } from '@/lib/i18n';
+
+const MESSAGES = defineMessages({
+  en: {
+    fullscreen: 'Toggle fullscreen',
+    share: 'Share current view',
+    layers: 'Toggle layer panel',
+    markets: 'Toggle markets panel',
+    intel: 'Toggle intel feed',
+    reset: 'Reset to global view',
+    help: 'Show this help',
+    close: 'Close panels / popups',
+    title: 'SHORTCUTS',
+    footer: 'PRESS [?] OR [ESC] TO CLOSE',
+  },
+  it: {
+    fullscreen: 'Attiva/disattiva schermo intero',
+    share: 'Condividi vista corrente',
+    layers: 'Mostra/nascondi pannello livelli',
+    markets: 'Mostra/nascondi pannello mercati',
+    intel: 'Mostra/nascondi feed intel',
+    reset: 'Torna alla vista globale',
+    help: 'Mostra questo aiuto',
+    close: 'Chiudi pannelli / popup',
+    title: 'SCORCIATOIE',
+    footer: 'PREMI [?] O [ESC] PER CHIUDERE',
+  },
+});
 
 const SHORTCUTS = [
-  { key: 'F', desc: 'Toggle fullscreen' },
-  { key: 'S', desc: 'Share current view' },
-  { key: 'L', desc: 'Toggle layer panel' },
-  { key: 'M', desc: 'Toggle markets panel' },
-  { key: 'I', desc: 'Toggle intel feed' },
-  { key: 'R', desc: 'Reset to global view' },
-  { key: '?', desc: 'Show this help' },
-  { key: 'ESC', desc: 'Close panels / popups' },
-];
+  { key: 'F', desc: 'fullscreen' },
+  { key: 'S', desc: 'share' },
+  { key: 'L', desc: 'layers' },
+  { key: 'M', desc: 'markets' },
+  { key: 'I', desc: 'intel' },
+  { key: 'R', desc: 'reset' },
+  { key: '?', desc: 'help' },
+  { key: 'ESC', desc: 'close' },
+] as const;
 
 export default function KeyboardShortcuts() {
   const [isOpen, setIsOpen] = useState(false);
+  const t = useT(MESSAGES);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -46,7 +75,7 @@ export default function KeyboardShortcuts() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Keyboard className="w-4 h-4 text-[var(--gold-primary)]" />
-                <span className="text-sm font-mono font-bold text-[var(--text-heading)] tracking-wider">SHORTCUTS</span>
+                <span className="text-sm font-mono font-bold text-[var(--text-heading)] tracking-wider">{t('title')}</span>
               </div>
               <button onClick={() => setIsOpen(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
                 <X className="w-4 h-4" />
@@ -55,7 +84,7 @@ export default function KeyboardShortcuts() {
             <div className="space-y-2">
               {SHORTCUTS.map(s => (
                 <div key={s.key} className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono text-[var(--text-secondary)]">{s.desc}</span>
+                  <span className="text-[10px] font-mono text-[var(--text-secondary)]">{t(s.desc)}</span>
                   <kbd className="px-2 py-0.5 rounded text-[9px] font-mono font-bold text-[var(--gold-primary)] bg-[var(--bg-void)] border border-[var(--border-primary)]">
                     {s.key}
                   </kbd>
@@ -63,7 +92,7 @@ export default function KeyboardShortcuts() {
               ))}
             </div>
             <div className="mt-4 text-center text-[9px] font-mono text-[var(--text-muted)] tracking-widest">
-              PRESS [?] OR [ESC] TO CLOSE
+              {t('footer')}
             </div>
           </motion.div>
         </motion.div>

@@ -25,7 +25,8 @@ import GlobalStatusBar from '@/components/GlobalStatusBar';
 import LiveAlerts from '@/components/LiveAlerts';
 import WorldRemote from '@/components/WorldRemote';
 import ArcGISPanel from '@/components/ArcGISPanel';
-import { LanguageToggle } from '@/lib/i18n';
+import MinervaLogo from '@/components/MinervaLogo';
+import { LanguageToggle, defineMessages, useT, useLang, translate, localeOf } from '@/lib/i18n';
 const OsirisMap = dynamic(() => import('@/components/OsirisMap'), { ssr: false });
 const LayerPanel = dynamic(() => import('@/components/LayerPanel'));
 const SpaceCam = dynamic(() => import('@/components/SpaceCam'), { ssr: false });
@@ -59,7 +60,209 @@ function useIsMobile() {
   }, []);
   return isMobile;
 }
+const MESSAGES = defineMessages({
+  en: {
+    uptime: 'UPTIME:',
+    unknown: 'Unknown',
+    splashSubtitle: 'GLOBAL INTELLIGENCE PLATFORM',
+    splashConnecting: 'ESTABLISHING SECURE CONNECTION...',
+    splashFeeds: 'INITIALIZING FEEDS...',
+    splashSensors: 'CALIBRATING SENSORS...',
+    splashReady: 'SYSTEM READY',
+    mapBoundary: 'Map',
+    globeTitle: '3D Globe',
+    flatTitle: '2D Map',
+    nightTitle: 'Night Mode',
+    satelliteTitle: 'Satellite View',
+    mapLabel: 'MAP',
+    tagline: 'OPEN SOURCE INTELLIGENCE',
+    monitoring: 'REAL-TIME GLOBAL MONITORING',
+    monitoringDomains: '· FLIGHTS · MARITIME · SATELLITES · CCTV · WEATHER · CYBER THREATS',
+    statusTitle: 'Backend connection status',
+    status: 'STATUS:',
+    statusLive: 'LIVE',
+    statusConnecting: 'CONNECTING',
+    statusError: 'ERROR',
+    layersTitle: 'Number of active data layers',
+    layers: 'LAYERS',
+    entitiesTitle: 'Tracked entities on map',
+    entities: 'ENTITIES',
+    solarTitle: 'Geomagnetic Storm Index — Kp{kp}',
+    solar: 'SOLAR:',
+    reconTitle: 'OSINT Recon — IP lookup, network sweep, geolocation',
+    spaceTitle: 'Live from Space — 24/7 video downlink from the ISS',
+    spaceAria: 'Live from Space',
+    spaceLabel: 'SPACE',
+    marketsTitle: 'Markets — crypto prices, space weather, global indices',
+    marketsAria: 'Markets',
+    marketsLabel: 'MARKETS',
+    alertsTitle: 'Live Alerts — earthquakes, conflicts, breaking news',
+    alertsAria: 'Live Alerts',
+    alertsLabel: 'ALERTS',
+    drawTitle: 'Draw — measure areas of interest on the map',
+    drawAria: 'Draw',
+    drawLabel: 'DRAW',
+    directionsTitle: 'Directions — turn-by-turn routing',
+    directionsAria: 'Directions',
+    routeLabel: 'ROUTE',
+    searchTitle: 'Search — find locations, cities, coordinates',
+    searchAria: 'Search',
+    searchLabel: 'SEARCH',
+    arcgisTitle: 'ArcGIS — search & import geospatial intel layers',
+    remoteTitle: 'World Remote — control nearby Bluetooth devices (TVs, speakers, AC)',
+    remoteLabel: 'REMOTE',
+    liveStream: 'LIVE STREAM',
+    externalOnly: 'EXTERNAL ONLY',
+    openYouTube: 'Open in YouTube',
+    embedRestricted: 'EMBED RESTRICTED',
+    embedRestrictedBody: '{name} does not allow third-party embedding. Click below to open the live stream directly.',
+    openLiveStream: 'OPEN LIVE STREAM',
+    unavailablePre: 'If you see “Video unavailable”, use ',
+    unavailablePost: ' above.',
+    navLayers: 'LAYERS',
+    navMarkets: 'MARKETS',
+    navIntel: 'INTEL',
+    navRecon: 'RECON',
+    navSearch: 'SEARCH',
+    navRoute: 'ROUTE',
+    navRemote: 'REMOTE',
+    drawerLayers: 'LAYERS & STATS',
+    drawerMarkets: 'MARKETS & INTEL',
+    drawerIntel: 'INTEL FEED',
+    drawerRecon: 'MINERVA RECON',
+    drawerRemote: 'WORLD REMOTE',
+    drawerSearch: 'SEARCH',
+    statAir: 'AIR',
+    statSat: 'SAT',
+    statCam: 'CAM',
+    statWx: 'WX',
+    statNuc: 'NUC',
+    cursorTitle: 'Cursor coordinates (hover over map)',
+    cursor: 'CURSOR',
+    locationTitle: 'Reverse-geocoded location name',
+    location: 'LOCATION',
+    hoverMap: 'HOVER MAP',
+    zoomTitle: 'Current zoom level',
+    zoom: 'ZOOM',
+    dossierTitle: 'REGION DOSSIER',
+    compiling: 'COMPILING INTEL...',
+    country: 'COUNTRY',
+    capital: 'CAPITAL',
+    population: 'POPULATION',
+    region: 'REGION',
+    languages: 'LANGUAGES',
+    area: 'AREA',
+    headOfState: 'HEAD OF STATE',
+    intelBrief: 'INTELLIGENCE BRIEF',
+    hintTitle: 'Press ? to see all keyboard shortcuts',
+    hintPress: 'Press ',
+    hintShortcuts: ' for shortcuts · ',
+    hintFullscreen: ' fullscreen · ',
+    hintReset: ' reset view',
+  },
+  it: {
+    uptime: 'UPTIME:',
+    unknown: 'Sconosciuto',
+    splashSubtitle: 'PIATTAFORMA DI INTELLIGENCE GLOBALE',
+    splashConnecting: 'CONNESSIONE SICURA IN CORSO...',
+    splashFeeds: 'INIZIALIZZAZIONE FEED...',
+    splashSensors: 'CALIBRAZIONE SENSORI...',
+    splashReady: 'SISTEMA PRONTO',
+    mapBoundary: 'Mappa',
+    globeTitle: 'Globo 3D',
+    flatTitle: 'Mappa 2D',
+    nightTitle: 'Modalità notte',
+    satelliteTitle: 'Vista satellitare',
+    mapLabel: 'MAPPA',
+    tagline: 'INTELLIGENCE DA FONTI APERTE',
+    monitoring: 'MONITORAGGIO GLOBALE IN TEMPO REALE',
+    monitoringDomains: '· VOLI · MARITTIMO · SATELLITI · CCTV · METEO · MINACCE CYBER',
+    statusTitle: 'Stato della connessione al backend',
+    status: 'STATO:',
+    statusLive: 'LIVE',
+    statusConnecting: 'CONNESSIONE',
+    statusError: 'ERRORE',
+    layersTitle: 'Numero di livelli dati attivi',
+    layers: 'LIVELLI',
+    entitiesTitle: 'Entità tracciate sulla mappa',
+    entities: 'ENTITÀ',
+    solarTitle: 'Indice di tempesta geomagnetica — Kp{kp}',
+    solar: 'SOLARE:',
+    reconTitle: 'OSINT Recon — lookup IP, scansione di rete, geolocalizzazione',
+    spaceTitle: 'Diretta dallo spazio — video 24/7 dalla ISS',
+    spaceAria: 'Diretta dallo spazio',
+    spaceLabel: 'SPAZIO',
+    marketsTitle: 'Mercati — prezzi crypto, meteo spaziale, indici globali',
+    marketsAria: 'Mercati',
+    marketsLabel: 'MERCATI',
+    alertsTitle: 'Allerte live — terremoti, conflitti, ultime notizie',
+    alertsAria: 'Allerte live',
+    alertsLabel: 'ALLERTE',
+    drawTitle: 'Disegna — misura aree di interesse sulla mappa',
+    drawAria: 'Disegna',
+    drawLabel: 'DISEGNA',
+    directionsTitle: 'Indicazioni — navigazione passo-passo',
+    directionsAria: 'Indicazioni',
+    routeLabel: 'PERCORSO',
+    searchTitle: 'Cerca — trova luoghi, città, coordinate',
+    searchAria: 'Cerca',
+    searchLabel: 'CERCA',
+    arcgisTitle: 'ArcGIS — cerca e importa livelli di intelligence geospaziale',
+    remoteTitle: 'World Remote — controlla dispositivi Bluetooth vicini (TV, casse, condizionatori)',
+    remoteLabel: 'REMOTO',
+    liveStream: 'DIRETTA',
+    externalOnly: 'SOLO ESTERNO',
+    openYouTube: 'Apri su YouTube',
+    embedRestricted: 'INCORPORAMENTO LIMITATO',
+    embedRestrictedBody: '{name} non consente l’incorporamento su siti di terze parti. Clicca qui sotto per aprire direttamente la diretta.',
+    openLiveStream: 'APRI DIRETTA',
+    unavailablePre: 'Se vedi “Video non disponibile”, usa ',
+    unavailablePost: ' qui sopra.',
+    navLayers: 'LIVELLI',
+    navMarkets: 'MERCATI',
+    navIntel: 'INTEL',
+    navRecon: 'RECON',
+    navSearch: 'CERCA',
+    navRoute: 'PERCORSO',
+    navRemote: 'REMOTO',
+    drawerLayers: 'LIVELLI E STATISTICHE',
+    drawerMarkets: 'MERCATI E INTEL',
+    drawerIntel: 'FEED INTEL',
+    drawerRecon: 'MINERVA RECON',
+    drawerRemote: 'WORLD REMOTE',
+    drawerSearch: 'CERCA',
+    statAir: 'VOLI',
+    statSat: 'SAT',
+    statCam: 'CAM',
+    statWx: 'METEO',
+    statNuc: 'NUC',
+    cursorTitle: 'Coordinate del cursore (passa sulla mappa)',
+    cursor: 'CURSORE',
+    locationTitle: 'Nome della località (geocodifica inversa)',
+    location: 'LUOGO',
+    hoverMap: 'PASSA SULLA MAPPA',
+    zoomTitle: 'Livello di zoom attuale',
+    zoom: 'ZOOM',
+    dossierTitle: 'DOSSIER REGIONE',
+    compiling: 'RACCOLTA INTEL...',
+    country: 'PAESE',
+    capital: 'CAPITALE',
+    population: 'POPOLAZIONE',
+    region: 'REGIONE',
+    languages: 'LINGUE',
+    area: 'SUPERFICIE',
+    headOfState: 'CAPO DI STATO',
+    intelBrief: 'BRIEFING INTELLIGENCE',
+    hintTitle: 'Premi ? per vedere tutte le scorciatoie da tastiera',
+    hintPress: 'Premi ',
+    hintShortcuts: ' per le scorciatoie · ',
+    hintFullscreen: ' schermo intero · ',
+    hintReset: ' reimposta vista',
+  },
+});
+
 const UptimeClock = () => {
+  const t = useT(MESSAGES);
   const [uptime, setUptime] = useState('00:00:00');
   const startTime = useRef(0);
   if (startTime.current === 0) startTime.current = Date.now();
@@ -70,7 +273,7 @@ const UptimeClock = () => {
     }, 1000);
     return () => clearInterval(iv);
   }, []);
-  return <span className="hidden lg:inline">UPTIME: <span className="text-[var(--gold-primary)]">{uptime}</span></span>;
+  return <span className="hidden lg:inline">{t('uptime')} <span className="text-[var(--gold-primary)]">{uptime}</span></span>;
 };
 
 const ZuluClock = () => {
@@ -87,11 +290,12 @@ const ZuluClock = () => {
 
 /** Real entity count — no fake throughput metrics */
 const ActiveEntityCount = ({ data }: { data: Record<string, unknown[]> }) => {
+  const { lang } = useLang();
   const count = useMemo(() => {
     if (!data) return 0;
     return Object.values(data).reduce((sum, v) => sum + (Array.isArray(v) ? v.length : 0), 0);
   }, [data]);
-  return <span className="text-[var(--alert-green)] font-bold tabular-nums">{count.toLocaleString()}</span>;
+  return <span className="text-[var(--alert-green)] font-bold tabular-nums">{count.toLocaleString(localeOf(lang))}</span>;
 };
 
 /** Extracts a watchable YouTube URL from embed/channel URLs */
@@ -134,6 +338,10 @@ function ViewSegment({ active, onClick, title, icon: Icon, label, layoutId }: {
 }
 
 export default function Dashboard() {
+  const t = useT(MESSAGES);
+  const { lang } = useLang();
+  const langRef = useRef(lang);
+  langRef.current = lang;
   const dataRef = useRef<any>({});
   const [dataVersion, setDataVersion] = useState(0);
   const data = dataRef.current;
@@ -467,7 +675,7 @@ export default function Dashboard() {
         if (res.ok) {
           const d = await res.json();
           const a = d.address || {};
-          const label = [a.city||a.town||a.village||a.county, a.state||a.region, a.country].filter(Boolean).join(', ') || 'Unknown';
+          const label = [a.city||a.town||a.village||a.county, a.state||a.region, a.country].filter(Boolean).join(', ') || translate(MESSAGES, langRef.current, 'unknown');
           if (geocodeCache.current.size > 500) { const it = geocodeCache.current.keys(); for (let i=0;i<100;i++) { const k = it.next().value; if(k) geocodeCache.current.delete(k); }}
           geocodeCache.current.set(gk, label);
           setLocationLabel(label);
@@ -1063,7 +1271,7 @@ export default function Dashboard() {
                 className="overflow-hidden whitespace-nowrap"
               >
                 <p className="text-[11px] md:text-[10px] font-mono tracking-[0.5em] text-[var(--gold-primary)]" style={{ opacity: 0.8 }}>
-                  GLOBAL INTELLIGENCE PLATFORM
+                  {t('splashSubtitle')}
                 </p>
               </motion.div>
             </div>
@@ -1084,10 +1292,10 @@ export default function Dashboard() {
               {/* Status messages — cycling */}
               <div className="mt-3 h-4 flex items-center justify-center">
                 {[
-                  { text: 'ESTABLISHING SECURE CONNECTION...', delay: 0.5 },
-                  { text: 'INITIALIZING FEEDS...', delay: 1.1 },
-                  { text: 'CALIBRATING SENSORS...', delay: 1.7 },
-                  { text: 'SYSTEM READY', delay: 2.2 },
+                  { text: t('splashConnecting'), delay: 0.5 },
+                  { text: t('splashFeeds'), delay: 1.1 },
+                  { text: t('splashSensors'), delay: 1.7 },
+                  { text: t('splashReady'), delay: 2.2 },
                 ].map((stage, i) => (
                   <motion.span
                     key={i}
@@ -1139,7 +1347,7 @@ export default function Dashboard() {
 
 
       {/* ── MAP ── */}
-      <ErrorBoundary name="Map">
+      <ErrorBoundary name={t('mapBoundary')}>
         <OsirisMap 
           key={osirisTheme}
           data={data} 
@@ -1268,11 +1476,11 @@ export default function Dashboard() {
       >
         {/* Unified Control Strip */}
         <div className="flex items-center gap-[3px] p-[3px] pointer-events-auto rounded-xl border border-[var(--border-primary)] bg-[var(--bg-panel)] backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.55)]">
-          <ViewSegment layoutId="view-projection" active={mapProjection === 'globe'} onClick={() => setMapProjection('globe')} title="3D Globe" icon={Globe} label="3D" />
-          <ViewSegment layoutId="view-projection" active={mapProjection === 'mercator'} onClick={selectFlatMap} title="2D Map" icon={MapPinned} label="2D" />
+          <ViewSegment layoutId="view-projection" active={mapProjection === 'globe'} onClick={() => setMapProjection('globe')} title={t('globeTitle')} icon={Globe} label="3D" />
+          <ViewSegment layoutId="view-projection" active={mapProjection === 'mercator'} onClick={selectFlatMap} title={t('flatTitle')} icon={MapPinned} label="2D" />
           <div className="w-px h-5 mx-1 bg-[var(--border-secondary)]" />
-          <ViewSegment layoutId="view-style" active={mapStyle === 'dark'} onClick={() => setMapStyle('dark')} title="Night Mode" icon={Moon} label="MAP" />
-          <ViewSegment layoutId="view-style" active={mapStyle === 'satellite'} onClick={() => setMapStyle('satellite')} title="Satellite View" icon={Satellite} label="SAT" />
+          <ViewSegment layoutId="view-style" active={mapStyle === 'dark'} onClick={() => setMapStyle('dark')} title={t('nightTitle')} icon={Moon} label={t('mapLabel')} />
+          <ViewSegment layoutId="view-style" active={mapStyle === 'satellite'} onClick={() => setMapStyle('satellite')} title={t('satelliteTitle')} icon={Satellite} label="SAT" />
         </div>
 
 
@@ -1287,19 +1495,15 @@ export default function Dashboard() {
       {/* ── HEADER ── */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 2.5 }} className={`absolute top-4 z-[200] pointer-events-none flex flex-col`} style={{ left: isMobile ? '24px' : '64px', right: '24px' }}>
         <div className="flex items-center gap-3 w-fit">
-          <svg viewBox="0 0 650 500" className="w-8 h-8 md:w-10 md:h-10 shrink-0 transition-colors duration-500 text-[#D4AF37] drop-shadow-[0_0_8px_rgba(255,215,0,0.5)]" fill="currentColor">
-            <path d="m620.39,364.82c-0.53628-7.2677-1.7767-14.482-5.0286-21.276-9.4786-19.803-33.963-29.34-53.026-19.284-15.333,8.0885-22.563,29.331-13.578,45.149,6.873,12.099,23.072,18.235,35.622,10.228,4.4328-2.828,7.6343-7.2793,8.9938-12.286,1.3595-5.0063,0.68452-10.798-2.9392-15.401-2.2364-2.8407-5.4473-4.7654-9.1114-5.408-3.664-0.64263-8.1708,0.40388-10.875,3.9972-1.7829,2.3692-1.91,4.5449-1.4108,7.1127,0.24961,1.2839,0.78116,2.8399,2.3513,3.9972,1.5702,1.1573,4.2926,1.9424,5.5844,0.58783,1.1069-1.1607-0.67477-3.153-0.73029-4.7559-0.0388-0.83158-0.0772-1.7317,0.26004-2.4745,0.89679-1.1463,1.8493-1.342,3.4682-1.0581,1.6548,0.29023,3.6474,1.4542,4.5851,2.6452v0.0588c2.0224,2.5986,2.3717,5.5943,1.5284,8.6999-0.81645,3.0066-2.8568,5.919-5.4668,7.7006l-0.29391,0.23513c-8.5452,5.4516-18.484,0.70317-23.392-7.9366-6.7162-11.823-1.5113-26.282,10.285-32.505,15.078-7.9537,35.744,1.451,40.36,17.085,4.566,15.464,2.8715,30.938,0.27385,37.511l10.609,0.073c2.5579-12.089,1.9287-15.035,1.9287-22.696z" />
-            <path d="m158.66,157a70.231,70.231,0,0,0,-14.44,42.81,70.235,70.235,0,1,0,140.47,0,70.231,70.231,0,0,0,-14.28,-42.81h-111.75z" />
-            <path d="m140.86,465.53c-6.7333,0-8.7137-5.4462-12.181-25.899-2.4479-14.774-7.1068-28.463-10.502-43.043-3.0219-13.117-5.6425-20.332-9.6694-26.618-6.5526-10.229-6.3011-20.921,0.71691-30.481,6.33-8.6232,6.827-11.121,6.5471-32.901-0.13783-10.725-0.56403-21.286-0.94711-23.468-0.88077-5.0179-4.6148-7.6923-13.904-9.9586-8.4827-2.0695-16.525-2.2933-41.967-1.1681-18.144,0.80245-20.457,0.72323-22.75-0.77901-5.627-3.687-2.9527-8.8405,12.261-23.626,15.69-15.249,23.876-24.688,38.811-44.75,26.839-36.053,30.927-40.83,57.501-49.189,19.575-6.1582,26.691-9.0119,62.031-10.06,24.654-0.7309,38.767,2.5963,45.357,3.3466,25.219,2.8716,66.247,14.877,91.933,26.083,13.581,5.9249,14.042,6.1723,30.115,16.152,11.981,7.4391,18.733,10.459,35.44,15.034,34.886,9.553,56.753,7.7583,92,10.378,9.2579,0.68808,49.298,3.5149,74.5,4.4784,30.689,1.1732,35.835-2.0376,38.423,0.54994,2.0315,2.0315,0.5636,8.1815,0.6024,14.306,0.0237,3.7378-0.18399,7.6642-0.48569,11.602-8.1923-1.424-8.0353-1.3676-26.54-2.9165-1.6808-0.14069-16.718-1.6695-44.5-4.1726-11.867-1.0692-70.326-2.8448-105.5-3.9248-16.997-0.52189-34.357-4.7228-51-1.2347-5.7624,1.2076,2.387-1.1161-16,7.4812-36.313,14.051-55.853,23.79-104.5,32.83-30.774,4.5201-33.208,4.9745-36.376,7.2909-1.7456,1.2764-1.662,1.6171,1.6767,6.8363,3.5642,5.5717,14.275,15.81,29.699,28.389,51.619,43.564,115.05,77.431,162.89,98.598,22.221,9.5122,37.55,14.655,50.108,16.811,61.892,13.654,134.26-9.4938,136.11-56.959,0.0489-1.256,0.49928-6.001-0.1398-12.079-0.44539-4.2357-0.89625-7.3216-2.2932-11.095-3.9795-10.75-12.413-20.407-28.672-21.755-11.746,0.022-20.375,6.1561-23.95,16.17-4.5622,12.78,1.3185,27.071,14.023,29.565,6.6403,1.3038,11.222-0.5256,14.271-4.4679,3.3424-4.3221,3.72-12.026,1.3559-15.634-2.2757-3.4732-7.2459-5.2754-10.824-3.9248-3.6125,1.3636-4.9933,0.36555-0.6538-3.1839,0.38036-0.24867,0.77844-0.4586,1.191-0.63136,6.6675-2.7918,17.127,4.1226,17.913,14.135,0.7119,11.495-7.7045,20.279-19.249,20.94-6.5659,0.37574-14.594-1.9665-20.026-7.8035-13.425-14.428-9.1712-34.885,2.9586-45.762,4.6131-4.1366,7.7535-6.0583,14.065-7.4773,19.37-4.3554,37.69,4.5134,45.528,24.301,3.5645,8.9992,3.7675,16.201,3.8515,23.221,0.70438,58.895-65.742,87.202-131.95,82.517-28.009-2.4123-46.229-6.8095-80.495-20.915-36.58-12.09-143.44-68.32-207.96-120.33-18.846-15.317-30.511-22.813-33.055-21.24-0.61585,0.38062-0.98989,11.992-0.99221,30.802-0.004,28.758-0.1019,30.352-2.0717,33.583-3.2793,5.3791-4.935,17.725-5.9822,44.608-1.6327,41.914-2.675,60.915-3.4439,62.778-1.3963,3.383-7.0306,4.6642-13.289,4.6642zm221.62-252.27c0.41803-2.1707-4.6044-8.6243-11.231-13.08-10.396-6.9893-22.385-11.512-34.092-15.96-71.934-23.518-145.08-20.065-174.03-4.962-10.593,5.1512-14.126,7.777-22.813,15.582-4.1291,3.7102-9.5939,9.7305-12.144,13.379-5.133,7.3428-10.014,13.339-19.014,23.362-9.3026,10.359-14.5,16.774-14.5,17.897,0,1.5721,7.8962,3.1488,17.5,3.5809,81.15,10.292,230.44,14.198,270.32-39.799zm224.18-69.351c-16.558-0.50003-42.467-2.0158-63.5-4.8954-19.525-2.6732-39.047-6.067-58-11.467-17.982-5.123-35.124-12.85-52.5-19.754-7.7243-3.0694-15.32-6.4533-23-9.6318-8.319-3.4429-16.53-7.1723-25-10.224-15.523-5.5928-30.986-11.946-47.239-14.789-41.988-7.3464-85.261-8.7793-127.76-5.4986-23.554,1.8182-46.695,7.7124-69.5,13.878-17.863,4.8293-35.019,11.972-52.5,18.041-5.069,1.761-10.039,6.841-15.177,5.321-5.396-1.6-10.73-7.749-10.317-13.361,0.434-5.884,7.835-9.014,12.753-12.272,16.823-11.146,36.498-17.485,55.661-23.803,19.219-6.3349,38.923-12.127,59.072-14.001,54.326-5.0532,110.09-3.4301,163.5,7.7269,28.29,5.9098,53.945,20.759,81,30.92,31.437,11.806,61.76,27.444,94.5,34.909,33.045,7.534,83.745,9.6292,101.22,9.5911,6.5425-0.0143,6.7685,0.0708,8.3595,3.1475,1.8515,3.5805,3.1256,14.296,1.7926,15.077-1.3395,0.78418-21.593,1.4453-33.376,1.0894z" />
-          </svg>
+          <MinervaLogo className="w-8 h-8 md:w-10 md:h-10 shrink-0 transition-colors duration-500 text-[#D4AF37] drop-shadow-[0_0_8px_rgba(255,215,0,0.5)]" />
           <div className="flex flex-col items-start gap-0.5">
             <h1 className="text-lg md:text-xl font-bold tracking-[0.4em] text-[#D4AF37] font-mono">MINERVA AI</h1>
-            <span className="text-[9px] md:text-[10px] font-mono tracking-[0.2em] opacity-80 uppercase text-[#D4AF37]">OPEN SOURCE INTELLIGENCE</span>
+            <span className="text-[9px] md:text-[10px] font-mono tracking-[0.2em] opacity-80 uppercase text-[#D4AF37]">{t('tagline')}</span>
           </div>
         </div>
         <div className="flex items-center gap-3 mt-1.5 pl-[44px] min-w-0 pr-4">
           <span className="text-[9px] md:text-[9px] text-[var(--text-muted)] font-mono tracking-[0.2em] md:tracking-[0.3em] uppercase opacity-40 truncate">
-            REAL-TIME GLOBAL MONITORING <span className="hidden md:inline">· FLIGHTS · MARITIME · SATELLITES · CCTV · WEATHER · CYBER THREATS</span>
+            {t('monitoring')} <span className="hidden md:inline">{t('monitoringDomains')}</span>
           </span>
         </div>
       </motion.div>
@@ -1312,19 +1516,19 @@ export default function Dashboard() {
           <ZuluClock />
         </span>
 
-        <span className="flex items-center gap-1" title="Backend connection status">STATUS: <span className={backendStatus === 'connected' ? 'text-[var(--alert-green)]' : 'text-[var(--alert-red)]'}>{backendStatus === 'connected' ? 'LIVE' : backendStatus.toUpperCase()}</span></span>
+        <span className="flex items-center gap-1" title={t('statusTitle')}>{t('status')} <span className={backendStatus === 'connected' ? 'text-[var(--alert-green)]' : 'text-[var(--alert-red)]'}>{backendStatus === 'connected' ? t('statusLive') : backendStatus === 'connecting' ? t('statusConnecting') : t('statusError')}</span></span>
 
-        <span className="hidden lg:inline-flex items-center gap-1" title="Number of active data layers">
+        <span className="hidden lg:inline-flex items-center gap-1" title={t('layersTitle')}>
           <span className="text-[var(--cyan-primary)] font-bold">{Object.values(activeLayers).filter(Boolean).length}</span>
-          <span className="opacity-60">LAYERS</span>
+          <span className="opacity-60">{t('layers')}</span>
         </span>
 
-        <span className="hidden lg:inline-flex items-center gap-1" title="Tracked entities on map">
+        <span className="hidden lg:inline-flex items-center gap-1" title={t('entitiesTitle')}>
           <ActiveEntityCount data={data} />
-          <span className="opacity-60">ENTITIES</span>
+          <span className="opacity-60">{t('entities')}</span>
         </span>
 
-        {spaceWeather && <span className="hidden lg:inline" title={`Geomagnetic Storm Index — Kp${spaceWeather.kp_index}`}>SOLAR: <span style={{ color: spaceWeather.storm_color, fontWeight: 700 }}>Kp{spaceWeather.kp_index}</span></span>}
+        {spaceWeather && <span className="hidden lg:inline" title={t('solarTitle', { kp: spaceWeather.kp_index })}>{t('solar')} <span style={{ color: spaceWeather.storm_color, fontWeight: 700 }}>Kp{spaceWeather.kp_index}</span></span>}
 
         <span className="text-[11px] font-bold tracking-[0.2em] text-[var(--text-muted)] opacity-50">V.4.1</span>
 
@@ -1351,7 +1555,7 @@ export default function Dashboard() {
       {/* ── RIGHT TOOL STRIP (desktop only — mobile uses bottom nav) ── */}
       {!isMobile && <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-[250] pointer-events-auto bg-black/40 backdrop-blur-sm p-1 rounded-full border border-white/5">
         <div className="relative group">
-          <button onClick={() => { setShowIntel(!showIntel); setShowMarkets(false); setShowAlerts(false); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showIntel ? 'bg-[var(--cyan-primary)]/20' : 'hover:bg-white/10'}`} title="OSINT Recon — IP lookup, network sweep, geolocation" aria-label="OSINT Recon" aria-expanded={showIntel}>
+          <button onClick={() => { setShowIntel(!showIntel); setShowMarkets(false); setShowAlerts(false); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showIntel ? 'bg-[var(--cyan-primary)]/20' : 'hover:bg-white/10'}`} title={t('reconTitle')} aria-label="OSINT Recon" aria-expanded={showIntel}>
             <Radar className={`w-4 h-4 ${showIntel ? 'text-[var(--cyan-primary)]' : 'text-white/60'}`} />
             {showIntel && (
               <span
@@ -1377,7 +1581,7 @@ export default function Dashboard() {
         </div>
 
         <div className="relative group">
-          <button onClick={() => { setShowIntel(false); setShowAlerts(false); setShowMarkets(false); setShowSpaceCam(v => !v); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showSpaceCam ? 'bg-[#00E5FF]/20' : 'hover:bg-white/10'}`} title="Live from Space — 24/7 video downlink from the ISS" aria-label="Live from Space" aria-expanded={showSpaceCam}>
+          <button onClick={() => { setShowIntel(false); setShowAlerts(false); setShowMarkets(false); setShowSpaceCam(v => !v); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showSpaceCam ? 'bg-[#00E5FF]/20' : 'hover:bg-white/10'}`} title={t('spaceTitle')} aria-label={t('spaceAria')} aria-expanded={showSpaceCam}>
             <Radio className={`w-4 h-4 ${showSpaceCam ? 'text-[#00E5FF]' : 'text-white/60'}`} />
             {showSpaceCam && (
               <span
@@ -1386,7 +1590,7 @@ export default function Dashboard() {
               />
             )}
           </button>
-          <span className="absolute right-11 top-1/2 -translate-y-1/2 px-2 py-1 text-[9px] font-mono tracking-wider text-white/80 bg-black/80 backdrop-blur-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">SPACE</span>
+          <span className="absolute right-11 top-1/2 -translate-y-1/2 px-2 py-1 text-[9px] font-mono tracking-wider text-white/80 bg-black/80 backdrop-blur-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">{t('spaceLabel')}</span>
           <AnimatePresence>
             {showSpaceCam && (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="absolute right-12 top-1/2 -translate-y-1/2 w-80">
@@ -1397,7 +1601,7 @@ export default function Dashboard() {
         </div>
 
         <div className="relative group">
-          <button onClick={() => { setShowMarkets(!showMarkets); setShowIntel(false); setShowAlerts(false); setShowSpaceCam(false); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showMarkets ? 'bg-[var(--gold-primary)]/20' : 'hover:bg-white/10'}`} title="Markets — crypto prices, space weather, global indices" aria-label="Markets" aria-expanded={showMarkets}>
+          <button onClick={() => { setShowMarkets(!showMarkets); setShowIntel(false); setShowAlerts(false); setShowSpaceCam(false); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showMarkets ? 'bg-[var(--gold-primary)]/20' : 'hover:bg-white/10'}`} title={t('marketsTitle')} aria-label={t('marketsAria')} aria-expanded={showMarkets}>
             <BarChart3 className={`w-4 h-4 ${showMarkets ? 'text-[var(--gold-primary)]' : 'text-white/60'}`} />
             {showMarkets && (
               <span
@@ -1406,7 +1610,7 @@ export default function Dashboard() {
               />
             )}
           </button>
-          <span className="absolute right-11 top-1/2 -translate-y-1/2 px-2 py-1 text-[9px] font-mono tracking-wider text-white/80 bg-black/80 backdrop-blur-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">MARKETS</span>
+          <span className="absolute right-11 top-1/2 -translate-y-1/2 px-2 py-1 text-[9px] font-mono tracking-wider text-white/80 bg-black/80 backdrop-blur-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">{t('marketsLabel')}</span>
           <AnimatePresence>
             {showMarkets && (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="absolute right-12 top-1/2 -translate-y-1/2 w-80">
@@ -1417,7 +1621,7 @@ export default function Dashboard() {
         </div>
 
         <div className="relative group">
-          <button onClick={() => { setShowAlerts(!showAlerts); setShowIntel(false); setShowMarkets(false); setShowDrawing(false); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showAlerts ? 'bg-[#FF3D3D]/20' : 'hover:bg-white/10'}`} title="Live Alerts — earthquakes, conflicts, breaking news" aria-label="Live Alerts" aria-expanded={showAlerts}>
+          <button onClick={() => { setShowAlerts(!showAlerts); setShowIntel(false); setShowMarkets(false); setShowDrawing(false); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showAlerts ? 'bg-[#FF3D3D]/20' : 'hover:bg-white/10'}`} title={t('alertsTitle')} aria-label={t('alertsAria')} aria-expanded={showAlerts}>
             <AlertTriangle className={`w-4 h-4 ${showAlerts ? 'text-[#FF3D3D]' : 'text-white/60'}`} />
             {showAlerts && (
               <span
@@ -1426,7 +1630,7 @@ export default function Dashboard() {
               />
             )}
           </button>
-          <span className="absolute right-11 top-1/2 -translate-y-1/2 px-2 py-1 text-[9px] font-mono tracking-wider text-white/80 bg-black/80 backdrop-blur-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">ALERTS</span>
+          <span className="absolute right-11 top-1/2 -translate-y-1/2 px-2 py-1 text-[9px] font-mono tracking-wider text-white/80 bg-black/80 backdrop-blur-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">{t('alertsLabel')}</span>
           <AnimatePresence>
             {showAlerts && (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="absolute right-12 top-1/2 -translate-y-1/2 w-80">
@@ -1437,7 +1641,7 @@ export default function Dashboard() {
         </div>
 
         <div className="relative group">
-          <button onClick={() => { setShowDrawing(!showDrawing); setShowIntel(false); setShowMarkets(false); setShowAlerts(false); setShowSpaceCam(false); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showDrawing ? 'bg-[#00E5FF]/20' : 'hover:bg-white/10'}`} title="Draw — measure areas of interest on the map" aria-label="Draw" aria-expanded={showDrawing}>
+          <button onClick={() => { setShowDrawing(!showDrawing); setShowIntel(false); setShowMarkets(false); setShowAlerts(false); setShowSpaceCam(false); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showDrawing ? 'bg-[#00E5FF]/20' : 'hover:bg-white/10'}`} title={t('drawTitle')} aria-label={t('drawAria')} aria-expanded={showDrawing}>
             <PenLine className={`w-4 h-4 ${showDrawing ? 'text-[#00E5FF]' : 'text-white/60'}`} />
             {showDrawing && (
               <span
@@ -1446,11 +1650,11 @@ export default function Dashboard() {
               />
             )}
           </button>
-          <span className="absolute right-11 top-1/2 -translate-y-1/2 px-2 py-1 text-[9px] font-mono tracking-wider text-white/80 bg-black/80 backdrop-blur-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">DRAW</span>
+          <span className="absolute right-11 top-1/2 -translate-y-1/2 px-2 py-1 text-[9px] font-mono tracking-wider text-white/80 bg-black/80 backdrop-blur-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">{t('drawLabel')}</span>
         </div>
 
         <div className="relative group">
-          <button onClick={() => { setShowDirections(!showDirections); if (showDirections) { setActiveRoute(null); } setShowDesktopSearch(false); setShowIntel(false); setShowMarkets(false); setShowAlerts(false); setShowSpaceCam(false); setShowDrawing(false); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showDirections ? 'bg-[var(--gold-primary)]/20' : 'hover:bg-white/10'}`} title="Directions — turn-by-turn routing" aria-label="Directions" aria-expanded={showDirections}>
+          <button onClick={() => { setShowDirections(!showDirections); if (showDirections) { setActiveRoute(null); } setShowDesktopSearch(false); setShowIntel(false); setShowMarkets(false); setShowAlerts(false); setShowSpaceCam(false); setShowDrawing(false); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showDirections ? 'bg-[var(--gold-primary)]/20' : 'hover:bg-white/10'}`} title={t('directionsTitle')} aria-label={t('directionsAria')} aria-expanded={showDirections}>
             <Route className={`w-4 h-4 ${showDirections ? 'text-[var(--gold-primary)]' : 'text-white/60'}`} />
             {showDirections && (
               <span
@@ -1459,11 +1663,11 @@ export default function Dashboard() {
               />
             )}
           </button>
-          <span className="absolute right-11 top-1/2 -translate-y-1/2 px-2 py-1 text-[9px] font-mono tracking-wider text-white/80 bg-black/80 backdrop-blur-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">ROUTE</span>
+          <span className="absolute right-11 top-1/2 -translate-y-1/2 px-2 py-1 text-[9px] font-mono tracking-wider text-white/80 bg-black/80 backdrop-blur-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">{t('routeLabel')}</span>
         </div>
 
         <div className="relative group">
-          <button onClick={() => { setShowDesktopSearch(!showDesktopSearch); setShowIntel(false); setShowMarkets(false); setShowAlerts(false); setShowSpaceCam(false); setShowDrawing(false); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showDesktopSearch ? 'bg-[var(--gold-primary)]/20' : 'hover:bg-white/10'}`} title="Search — find locations, cities, coordinates" aria-label="Search" aria-expanded={showDesktopSearch}>
+          <button onClick={() => { setShowDesktopSearch(!showDesktopSearch); setShowIntel(false); setShowMarkets(false); setShowAlerts(false); setShowSpaceCam(false); setShowDrawing(false); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showDesktopSearch ? 'bg-[var(--gold-primary)]/20' : 'hover:bg-white/10'}`} title={t('searchTitle')} aria-label={t('searchAria')} aria-expanded={showDesktopSearch}>
             <Search className={`w-4 h-4 ${showDesktopSearch ? 'text-[var(--gold-primary)]' : 'text-white/60'}`} />
             {showDesktopSearch && (
               <span
@@ -1472,7 +1676,7 @@ export default function Dashboard() {
               />
             )}
           </button>
-          <span className="absolute right-11 top-1/2 -translate-y-1/2 px-2 py-1 text-[9px] font-mono tracking-wider text-white/80 bg-black/80 backdrop-blur-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">SEARCH</span>
+          <span className="absolute right-11 top-1/2 -translate-y-1/2 px-2 py-1 text-[9px] font-mono tracking-wider text-white/80 bg-black/80 backdrop-blur-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">{t('searchLabel')}</span>
           <AnimatePresence>
             {showDesktopSearch && (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="absolute right-12 top-1/2 -translate-y-1/2 w-80">
@@ -1487,7 +1691,7 @@ export default function Dashboard() {
 
         {/* ── ARCGIS INTEL ── */}
         <div className="relative group">
-          <button onClick={() => { setShowArcGIS(!showArcGIS); setShowRemote(false); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showArcGIS ? 'bg-[var(--gold-primary)]/20' : 'hover:bg-white/10'}`} title="ArcGIS — search & import geospatial intel layers" aria-label="ArcGIS" aria-expanded={showArcGIS}>
+          <button onClick={() => { setShowArcGIS(!showArcGIS); setShowRemote(false); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showArcGIS ? 'bg-[var(--gold-primary)]/20' : 'hover:bg-white/10'}`} title={t('arcgisTitle')} aria-label="ArcGIS" aria-expanded={showArcGIS}>
             <Database className={`w-4 h-4 ${showArcGIS ? 'text-[var(--gold-primary)]' : 'text-white/60'}`} />
             {showArcGIS && (
               <span
@@ -1521,7 +1725,7 @@ export default function Dashboard() {
 
         {/* ── WORLD REMOTE ── */}
         <div className="relative group">
-          <button onClick={() => { setShowRemote(!showRemote); setShowArcGIS(false); setShowIntel(false); setShowMarkets(false); setShowAlerts(false); setShowSpaceCam(false); setShowDrawing(false); setShowDesktopSearch(false); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showRemote ? 'bg-[var(--cyan-primary)]/20' : 'hover:bg-white/10'}`} title="World Remote — control nearby Bluetooth devices (TVs, speakers, AC)" aria-label="World Remote" aria-expanded={showRemote}>
+          <button onClick={() => { setShowRemote(!showRemote); setShowArcGIS(false); setShowIntel(false); setShowMarkets(false); setShowAlerts(false); setShowSpaceCam(false); setShowDrawing(false); setShowDesktopSearch(false); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showRemote ? 'bg-[var(--cyan-primary)]/20' : 'hover:bg-white/10'}`} title={t('remoteTitle')} aria-label="World Remote" aria-expanded={showRemote}>
             <Bluetooth className={`w-4 h-4 ${showRemote ? 'text-[var(--cyan-primary)]' : 'text-white/60'}`} />
             {showRemote && (
               <span
@@ -1530,7 +1734,7 @@ export default function Dashboard() {
               />
             )}
           </button>
-          <span className="absolute right-11 top-1/2 -translate-y-1/2 px-2 py-1 text-[9px] font-mono tracking-wider text-white/80 bg-black/80 backdrop-blur-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">REMOTE</span>
+          <span className="absolute right-11 top-1/2 -translate-y-1/2 px-2 py-1 text-[9px] font-mono tracking-wider text-white/80 bg-black/80 backdrop-blur-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">{t('remoteLabel')}</span>
           <AnimatePresence>
             {showRemote && (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="absolute right-12 top-1/2 -translate-y-1/2 w-80">
@@ -1572,9 +1776,9 @@ export default function Dashboard() {
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-[#FF4081] animate-osiris-pulse" />
                   <span className="text-[11px] font-mono font-bold text-white tracking-wider">{liveFeedName}</span>
-                  <span className="px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 font-mono text-[10px] font-bold">LIVE STREAM</span>
+                  <span className="px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 font-mono text-[10px] font-bold">{t('liveStream')}</span>
                   {!liveFeedEmbedAllowed && (
-                    <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-mono text-[10px]">EXTERNAL ONLY</span>
+                    <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-mono text-[10px]">{t('externalOnly')}</span>
                   )}
                 </div>
                 <div className="flex items-center gap-3">
@@ -1584,7 +1788,7 @@ export default function Dashboard() {
                     rel="noopener noreferrer"
                     className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[var(--border-primary)] hover:bg-[var(--gold-primary)] hover:text-black text-white transition-colors text-[10px] font-mono"
                   >
-                    <span>Open in YouTube</span>
+                    <span>{t('openYouTube')}</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                   <button onClick={() => setLiveFeedUrl(null)} className="text-white/70 hover:text-white transition-colors p-1">
@@ -1609,9 +1813,9 @@ export default function Dashboard() {
                     <div className="w-14 h-14 rounded-full bg-[#39FF14]/10 border border-[#39FF14]/20 flex items-center justify-center mx-auto mb-4">
                       <ExternalLink className="w-6 h-6 text-[#39FF14]" />
                     </div>
-                    <p className="text-[12px] font-mono font-bold text-white tracking-widest mb-2">EMBED RESTRICTED</p>
+                    <p className="text-[12px] font-mono font-bold text-white tracking-widest mb-2">{t('embedRestricted')}</p>
                     <p className="text-[10px] font-mono text-white/50 mb-6 max-w-xs">
-                      {liveFeedName} does not allow third-party embedding. Click below to open the live stream directly.
+                      {t('embedRestrictedBody', { name: liveFeedName })}
                     </p>
                     <a
                       href={getYouTubeWatchUrl(liveFeedUrl)}
@@ -1620,7 +1824,7 @@ export default function Dashboard() {
                       className="inline-flex items-center gap-2 px-6 py-2.5 rounded border border-[#39FF14]/40 text-[#39FF14] font-mono text-[11px] hover:bg-[#39FF14]/10 transition-colors tracking-wider"
                     >
                       <ExternalLink className="w-4 h-4" />
-                      OPEN LIVE STREAM
+                      {t('openLiveStream')}
                     </a>
                   </div>
                 </div>
@@ -1631,7 +1835,7 @@ export default function Dashboard() {
                 <div className="bg-[#111]/90 px-4 py-2.5 border-t border-[var(--border-primary)] flex items-center gap-2.5">
                   <AlertTriangle className="w-4 h-4 text-[var(--gold-primary)] shrink-0" />
                   <span className="text-[10px] font-mono text-white/70 leading-relaxed">
-                    If you see &ldquo;Video unavailable&rdquo;, use <strong className="text-[var(--gold-primary)]">Open in YouTube</strong> above.
+                    {t('unavailablePre')}<strong className="text-[var(--gold-primary)]">{t('openYouTube')}</strong>{t('unavailablePost')}
                   </span>
                 </div>
               )}
@@ -1647,16 +1851,16 @@ export default function Dashboard() {
           <div className="mobile-nav">
             <div className="glass-panel mobile-nav-inner">
               {[
-                { id: 'layers' as const, icon: Layers, label: 'LAYERS' },
-                { id: 'markets' as const, icon: BarChart3, label: 'MARKETS' },
-                { id: 'intel' as const, icon: Newspaper, label: 'INTEL' },
-                { id: 'recon' as const, icon: Radar, label: 'RECON' },
-                { id: 'search' as const, icon: Search, label: 'SEARCH' },
+                { id: 'layers' as const, icon: Layers, label: t('navLayers') },
+                { id: 'markets' as const, icon: BarChart3, label: t('navMarkets') },
+                { id: 'intel' as const, icon: Newspaper, label: t('navIntel') },
+                { id: 'recon' as const, icon: Radar, label: t('navRecon') },
+                { id: 'search' as const, icon: Search, label: t('navSearch') },
                 // Routing was reachable only from the desktop tool rail, so a
                 // phone could not open it at all. It sits next to SEARCH
                 // because both answer "take me somewhere".
-                { id: 'route' as const, icon: Route, label: 'ROUTE' },
-                { id: 'remote' as const, icon: Bluetooth, label: 'REMOTE' },
+                { id: 'route' as const, icon: Route, label: t('navRoute') },
+                { id: 'remote' as const, icon: Bluetooth, label: t('navRemote') },
               ].map(tab => {
                 // Routing opens the planner at the top of the screen rather than
                 // the bottom drawer — it needs the room above the keyboard, and
@@ -1707,7 +1911,7 @@ export default function Dashboard() {
                 <div className="px-3 pb-3">
                   <div className="flex items-center justify-between mb-2">
                     <span className="hud-text text-[10px] text-[var(--text-primary)]">
-                      {mobilePanel === 'layers' ? 'LAYERS & STATS' : mobilePanel === 'markets' ? 'MARKETS & INTEL' : mobilePanel === 'intel' ? 'INTEL FEED' : mobilePanel === 'recon' ? 'MINERVA RECON' : mobilePanel === 'remote' ? 'WORLD REMOTE' : 'SEARCH'}
+                      {mobilePanel === 'layers' ? t('drawerLayers') : mobilePanel === 'markets' ? t('drawerMarkets') : mobilePanel === 'intel' ? t('drawerIntel') : mobilePanel === 'recon' ? t('drawerRecon') : mobilePanel === 'remote' ? t('drawerRemote') : t('drawerSearch')}
                     </span>
                     <button onClick={() => setMobilePanel(null)} className="text-[var(--text-muted)] p-1"><X className="w-4 h-4" /></button>
                   </div>
@@ -1715,11 +1919,11 @@ export default function Dashboard() {
                     <>
                       <div className="glass-panel-sm p-2 mb-2">
                         <div className="grid grid-cols-5 gap-1 text-center">
-                          <div><div className="hud-label" style={{fontSize:'9px'}}>AIR</div><div className="hud-value text-[10px]">{totalFlights.toLocaleString()}</div></div>
-                          <div><div className="hud-label" style={{fontSize:'9px'}}>SAT</div><div className="hud-value text-[10px]">{(data.satellites?.length||0)}</div></div>
-                          <div><div className="hud-label" style={{fontSize:'9px'}}>CAM</div><div className="hud-value text-[10px]">{(data.cameras?.length||0)}</div></div>
-                          <div><div className="hud-label" style={{fontSize:'9px'}}>WX</div><div className="hud-value text-[10px]" style={{color:'var(--accent-weather)'}}>{(data.weather_events?.length||0)}</div></div>
-                          <div><div className="hud-label" style={{fontSize:'9px'}}>NUC</div><div className="hud-value text-[10px]" style={{color:'var(--accent-nuclear)'}}>{(data.infrastructure?.length||0)}</div></div>
+                          <div><div className="hud-label" style={{fontSize:'9px'}}>{t('statAir')}</div><div className="hud-value text-[10px]">{totalFlights.toLocaleString(localeOf(lang))}</div></div>
+                          <div><div className="hud-label" style={{fontSize:'9px'}}>{t('statSat')}</div><div className="hud-value text-[10px]">{(data.satellites?.length||0)}</div></div>
+                          <div><div className="hud-label" style={{fontSize:'9px'}}>{t('statCam')}</div><div className="hud-value text-[10px]">{(data.cameras?.length||0)}</div></div>
+                          <div><div className="hud-label" style={{fontSize:'9px'}}>{t('statWx')}</div><div className="hud-value text-[10px]" style={{color:'var(--accent-weather)'}}>{(data.weather_events?.length||0)}</div></div>
+                          <div><div className="hud-label" style={{fontSize:'9px'}}>{t('statNuc')}</div><div className="hud-value text-[10px]" style={{color:'var(--accent-nuclear)'}}>{(data.infrastructure?.length||0)}</div></div>
                         </div>
                       </div>
                       <LayerPanel {...terrainPanelProps} data={data} activeLayers={activeLayers} setActiveLayers={setActiveLayers} isMobile={true} theme={osirisTheme} setTheme={setOsirisTheme} capabilities={capabilities} />
@@ -1763,16 +1967,16 @@ export default function Dashboard() {
       {!isMobile && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 3, duration: 0.8 }} className="desktop-only absolute bottom-8 z-[200] pointer-events-auto" style={{ left: '72px' }}>
           <div className="flex items-center gap-5 text-[9px] font-mono tracking-widest text-[var(--text-muted)] opacity-60">
-            <div className="flex gap-2 items-center" title="Cursor coordinates (hover over map)">
-              <span>CURSOR</span>
+            <div className="flex gap-2 items-center" title={t('cursorTitle')}>
+              <span>{t('cursor')}</span>
               <span ref={coordsDisplayRef} className="text-[var(--gold-primary)] font-bold tabular-nums">—</span>
             </div>
-            <div className="flex gap-2 items-center" title="Reverse-geocoded location name">
-              <span>LOCATION</span>
-              <span className="text-[var(--cyan-primary)] truncate max-w-[200px]">{locationLabel || 'HOVER MAP'}</span>
+            <div className="flex gap-2 items-center" title={t('locationTitle')}>
+              <span>{t('location')}</span>
+              <span className="text-[var(--cyan-primary)] truncate max-w-[200px]">{locationLabel || t('hoverMap')}</span>
             </div>
-            <div className="flex gap-2 items-center" title="Current zoom level">
-              <span>ZOOM</span>
+            <div className="flex gap-2 items-center" title={t('zoomTitle')}>
+              <span>{t('zoom')}</span>
               <span className="text-[var(--gold-primary)] font-bold tabular-nums">{mapView.zoom.toFixed(1)}</span>
             </div>
           </div>
@@ -1786,29 +1990,29 @@ export default function Dashboard() {
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="absolute top-16 md:top-20 left-2 right-2 md:left-1/2 md:right-auto md:-translate-x-1/2 z-[300] md:w-[480px] max-h-[65vh] overflow-y-auto styled-scrollbar">
           <div className="glass-panel p-5 osiris-glow">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-mono font-bold text-[var(--gold-primary)] tracking-wider">REGION DOSSIER</h2>
+              <h2 className="text-sm font-mono font-bold text-[var(--gold-primary)] tracking-wider">{t('dossierTitle')}</h2>
               <button onClick={() => { setRegionDossier(null); setDossierLoading(false); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-xs">✕</button>
             </div>
             {dossierLoading ? (
               <div className="text-center py-8">
                 <div className="w-5 h-5 border-2 border-[var(--gold-primary)] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                <span className="text-[9px] font-mono text-[var(--text-muted)] tracking-widest">COMPILING INTEL...</span>
+                <span className="text-[9px] font-mono text-[var(--text-muted)] tracking-widest">{t('compiling')}</span>
               </div>
             ) : regionDossier && (
               <div className="space-y-3">
-                <div><div className="hud-label mb-0.5">LOCATION</div><div className="text-xs text-[var(--text-primary)]">{regionDossier.location?.display_name}</div></div>
+                <div><div className="hud-label mb-0.5">{t('location')}</div><div className="text-xs text-[var(--text-primary)]">{regionDossier.location?.display_name}</div></div>
                 {regionDossier.country && (
                   <div className="grid grid-cols-2 gap-2">
-                    <div><div className="hud-label mb-0.5">COUNTRY</div><div className="text-xs text-[var(--text-primary)]">{regionDossier.country.flag} {regionDossier.country.name}</div></div>
-                    <div><div className="hud-label mb-0.5">CAPITAL</div><div className="text-xs text-[var(--text-primary)]">{regionDossier.country.capital}</div></div>
-                    <div><div className="hud-label mb-0.5">POPULATION</div><div className="text-xs text-[var(--text-primary)]">{regionDossier.country.population?.toLocaleString()}</div></div>
-                    <div><div className="hud-label mb-0.5">REGION</div><div className="text-xs text-[var(--text-primary)]">{regionDossier.country.subregion || regionDossier.country.region}</div></div>
-                    <div><div className="hud-label mb-0.5">LANGUAGES</div><div className="text-xs text-[var(--text-primary)]">{regionDossier.country.languages?.join(', ')}</div></div>
-                    <div><div className="hud-label mb-0.5">AREA</div><div className="text-xs text-[var(--text-primary)]">{regionDossier.country.area?.toLocaleString()} km²</div></div>
+                    <div><div className="hud-label mb-0.5">{t('country')}</div><div className="text-xs text-[var(--text-primary)]">{regionDossier.country.flag} {regionDossier.country.name}</div></div>
+                    <div><div className="hud-label mb-0.5">{t('capital')}</div><div className="text-xs text-[var(--text-primary)]">{regionDossier.country.capital}</div></div>
+                    <div><div className="hud-label mb-0.5">{t('population')}</div><div className="text-xs text-[var(--text-primary)]">{regionDossier.country.population?.toLocaleString(localeOf(lang))}</div></div>
+                    <div><div className="hud-label mb-0.5">{t('region')}</div><div className="text-xs text-[var(--text-primary)]">{regionDossier.country.subregion || regionDossier.country.region}</div></div>
+                    <div><div className="hud-label mb-0.5">{t('languages')}</div><div className="text-xs text-[var(--text-primary)]">{regionDossier.country.languages?.join(', ')}</div></div>
+                    <div><div className="hud-label mb-0.5">{t('area')}</div><div className="text-xs text-[var(--text-primary)]">{regionDossier.country.area?.toLocaleString(localeOf(lang))} km²</div></div>
                   </div>
                 )}
-                {regionDossier.head_of_state && (<div><div className="hud-label mb-0.5">HEAD OF STATE</div><div className="text-xs text-[var(--gold-primary)]">{regionDossier.head_of_state.name}</div><div className="text-[9px] text-[var(--text-muted)]">{regionDossier.head_of_state.position}</div></div>)}
-                {regionDossier.wikipedia && (<div><div className="hud-label mb-1">INTELLIGENCE BRIEF</div><div className="flex gap-3">{regionDossier.wikipedia.thumbnail && <img src={regionDossier.wikipedia.thumbnail} alt="" className="w-14 h-14 rounded object-cover flex-shrink-0" />}<p className="text-[9px] text-[var(--text-secondary)] leading-relaxed">{regionDossier.wikipedia.extract}</p></div></div>)}
+                {regionDossier.head_of_state && (<div><div className="hud-label mb-0.5">{t('headOfState')}</div><div className="text-xs text-[var(--gold-primary)]">{regionDossier.head_of_state.name}</div><div className="text-[9px] text-[var(--text-muted)]">{regionDossier.head_of_state.position}</div></div>)}
+                {regionDossier.wikipedia && (<div><div className="hud-label mb-1">{t('intelBrief')}</div><div className="flex gap-3">{regionDossier.wikipedia.thumbnail && <img src={regionDossier.wikipedia.thumbnail} alt="" className="w-14 h-14 rounded object-cover flex-shrink-0" />}<p className="text-[9px] text-[var(--text-secondary)] leading-relaxed">{regionDossier.wikipedia.extract}</p></div></div>)}
               </div>
             )}
           </div>
@@ -1879,8 +2083,8 @@ export default function Dashboard() {
       <GlobalStatusBar />
 
       {/* Shortcut hint — more visible */}
-      <div className="desktop-only absolute bottom-[26px] right-5 z-[200] pointer-events-none text-[9px] font-mono text-[var(--text-muted)] opacity-50 tracking-widest" title="Press ? to see all keyboard shortcuts">
-        Press <span className="text-[var(--gold-primary)] opacity-80">?</span> for shortcuts · <span className="text-[var(--gold-primary)] opacity-80">F</span> fullscreen · <span className="text-[var(--gold-primary)] opacity-80">R</span> reset view
+      <div className="desktop-only absolute bottom-[26px] right-5 z-[200] pointer-events-none text-[9px] font-mono text-[var(--text-muted)] opacity-50 tracking-widest" title={t('hintTitle')}>
+        {t('hintPress')}<span className="text-[var(--gold-primary)] opacity-80">?</span>{t('hintShortcuts')}<span className="text-[var(--gold-primary)] opacity-80">F</span>{t('hintFullscreen')}<span className="text-[var(--gold-primary)] opacity-80">R</span>{t('hintReset')}
       </div>
 
 

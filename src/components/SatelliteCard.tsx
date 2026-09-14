@@ -1,6 +1,52 @@
 'use client';
 
 import { ExternalLink, Orbit, Satellite, X } from 'lucide-react';
+import { defineMessages, localeOf, useLang, useT } from '@/lib/i18n';
+
+const MESSAGES = defineMessages({
+  en: {
+    dialog: 'Satellite {name}',
+    unknownMission: 'Unknown mission',
+    clearAria: 'Clear satellite selection',
+    clearTitle: 'Clear selection (Esc)',
+    altitude: 'ALTITUDE',
+    orbit: 'ORBIT',
+    period: 'PERIOD',
+    speed: 'SPEED',
+    latitude: 'LATITUDE',
+    longitude: 'LONGITUDE',
+    class: 'CLASS',
+    plotting: 'PLOTTING ORBIT…',
+    trackReady: 'ORBIT TRACK ON GLOBE',
+    noTrack: 'NO TRACK — TLE UNAVAILABLE',
+    trackN2yo: 'TRACK ON N2YO',
+    noteLeo: 'Low Earth orbit',
+    noteMeo: 'Medium Earth orbit',
+    noteGeo: 'Geostationary belt',
+    noteHeo: 'High / highly elliptical',
+  },
+  it: {
+    dialog: 'Satellite {name}',
+    unknownMission: 'Missione sconosciuta',
+    clearAria: 'Deseleziona satellite',
+    clearTitle: 'Deseleziona (Esc)',
+    altitude: 'ALTITUDINE',
+    orbit: 'ORBITA',
+    period: 'PERIODO',
+    speed: 'VELOCITÀ',
+    latitude: 'LATITUDINE',
+    longitude: 'LONGITUDINE',
+    class: 'CLASSE',
+    plotting: 'CALCOLO ORBITA…',
+    trackReady: 'TRACCIA ORBITALE SUL GLOBO',
+    noTrack: 'NESSUNA TRACCIA — TLE NON DISPONIBILE',
+    trackN2yo: 'SEGUI SU N2YO',
+    noteLeo: 'Orbita terrestre bassa',
+    noteMeo: 'Orbita terrestre media',
+    noteGeo: 'Fascia geostazionaria',
+    noteHeo: 'Alta / fortemente ellittica',
+  },
+});
 
 /**
  * MinervaAI — selected satellite readout
@@ -43,11 +89,11 @@ const EARTH_RADIUS_KM = 6371;
  * "anything high": a Molniya apogee is not a geostationary satellite, and
  * labelling it one would be worse than saying nothing.
  */
-function regime(altKm: number): { label: string; note: string } {
-  if (altKm < 2000) return { label: 'LEO', note: 'Low Earth orbit' };
-  if (altKm < 35000) return { label: 'MEO', note: 'Medium Earth orbit' };
-  if (altKm <= 36500) return { label: 'GEO', note: 'Geostationary belt' };
-  return { label: 'HEO', note: 'High / highly elliptical' };
+function regime(altKm: number): { label: string; note: 'noteLeo' | 'noteMeo' | 'noteGeo' | 'noteHeo' } {
+  if (altKm < 2000) return { label: 'LEO', note: 'noteLeo' };
+  if (altKm < 35000) return { label: 'MEO', note: 'noteMeo' };
+  if (altKm <= 36500) return { label: 'GEO', note: 'noteGeo' };
+  return { label: 'HEO', note: 'noteHeo' };
 }
 
 /** Circular-orbit speed implied by the period; the point of it is scale, not precision. */
@@ -83,6 +129,8 @@ function Field({ label, value, color }: { label: string; value: string; color?: 
 }
 
 export default function SatelliteCard({ sat, onClose }: { sat: SatelliteDetail; onClose: () => void }) {
+  const t = useT(MESSAGES);
+  const { lang } = useLang();
   const accent = colorSafe(sat.color);
   const shell = regime(sat.alt);
 
@@ -91,7 +139,7 @@ export default function SatelliteCard({ sat, onClose }: { sat: SatelliteDetail; 
       className="pointer-events-auto absolute left-2 right-2 top-16 z-[350] overflow-hidden rounded-lg border bg-[var(--bg-panel)] shadow-[0_6px_20px_rgba(0,0,0,0.45)] backdrop-blur-2xl md:left-[72px] md:right-auto md:top-[88px] md:w-[248px]"
       style={{ borderColor: `${accent}33` }}
       role="dialog"
-      aria-label={`Satellite ${sat.name}`}
+      aria-label={t('dialog', { name: sat.name })}
     >
       {/* A rule in the satellite's own colour, matching its marker and its track. */}
       <div className="h-px w-full" style={{ background: `${accent}99` }} />
@@ -103,43 +151,43 @@ export default function SatelliteCard({ sat, onClose }: { sat: SatelliteDetail; 
             {sat.name}
           </div>
           <div className="truncate text-[9px] font-mono tracking-[0.12em] text-[var(--text-secondary)]">
-            {sat.mission || 'Unknown mission'}
+            {sat.mission || t('unknownMission')}
           </div>
         </div>
         <button
           onClick={onClose}
           className="-mr-1 -mt-1 flex-shrink-0 rounded-md p-1 text-[var(--text-muted)] transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50"
-          aria-label="Clear satellite selection"
-          title="Clear selection (Esc)"
+          aria-label={t('clearAria')}
+          title={t('clearTitle')}
         >
           <X className="h-3 w-3" />
         </button>
       </div>
 
       <div className="grid grid-cols-2 gap-x-2.5 gap-y-2 px-2.5 py-2.5">
-        <Field label="ALTITUDE" value={`${Math.round(sat.alt).toLocaleString()} km`} color="var(--cyan-primary)" />
-        <Field label="ORBIT" value={shell.label} color={accent} />
+        <Field label={t('altitude')} value={`${Math.round(sat.alt).toLocaleString(localeOf(lang))} km`} color="var(--cyan-primary)" />
+        <Field label={t('orbit')} value={shell.label} color={accent} />
         <Field
-          label="PERIOD"
+          label={t('period')}
           value={sat.periodMinutes ? period(sat.periodMinutes) : '—'}
         />
         <Field
-          label="SPEED"
+          label={t('speed')}
           value={sat.periodMinutes ? `${speedKmS(sat.alt, sat.periodMinutes).toFixed(2)} km/s` : '—'}
         />
-        <Field label="LATITUDE" value={`${sat.lat.toFixed(3)}°`} />
-        <Field label="LONGITUDE" value={`${sat.lng.toFixed(3)}°`} />
+        <Field label={t('latitude')} value={`${sat.lat.toFixed(3)}°`} />
+        <Field label={t('longitude')} value={`${sat.lng.toFixed(3)}°`} />
         <Field label="NORAD ID" value={sat.noradId || '—'} />
-        <Field label="CLASS" value={shell.note} />
+        <Field label={t('class')} value={t(shell.note)} />
       </div>
 
       {/* What the globe is showing, so a missing track reads as a known state
           rather than as the selection having silently failed. */}
       <div className="flex items-center gap-1.5 border-t border-[var(--border-secondary)] px-2.5 py-1.5 text-[8px] font-mono tracking-[0.12em] text-[var(--text-muted)]">
         <Orbit className="h-2.5 w-2.5" />
-        {sat.track === 'loading' && <span>PLOTTING ORBIT…</span>}
-        {sat.track === 'ready' && <span style={{ color: accent }}>ORBIT TRACK ON GLOBE</span>}
-        {sat.track === 'unavailable' && <span>NO TRACK — TLE UNAVAILABLE</span>}
+        {sat.track === 'loading' && <span>{t('plotting')}</span>}
+        {sat.track === 'ready' && <span style={{ color: accent }}>{t('trackReady')}</span>}
+        {sat.track === 'unavailable' && <span>{t('noTrack')}</span>}
       </div>
 
       {sat.noradId && (
@@ -150,7 +198,7 @@ export default function SatelliteCard({ sat, onClose }: { sat: SatelliteDetail; 
           className="flex items-center justify-center gap-1.5 border-t px-2.5 py-2 text-[9px] font-mono tracking-[0.15em] transition-colors"
           style={{ borderColor: 'var(--border-secondary)', color: accent, background: `${accent}0a` }}
         >
-          TRACK ON N2YO <ExternalLink className="h-2.5 w-2.5" />
+          {t('trackN2yo')} <ExternalLink className="h-2.5 w-2.5" />
         </a>
       )}
     </div>

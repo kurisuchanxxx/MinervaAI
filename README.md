@@ -1,29 +1,67 @@
 <div align="center">
 
-# ⬡ OSIRIS
+# 🦉 MinervaAI
 
-### Open Source Intelligence & Reconnaissance Integrated System
+### Piattaforma di intelligence open source · Open Source Intelligence Platform
 
-[![Live Demo](https://img.shields.io/badge/osirisai.live-00E5FF?style=for-the-badge&logo=vercel&logoColor=white)](https://osirislive.app)
-[![Support OSIRIS](https://img.shields.io/badge/Support_Project-Patreon-FF424D?style=for-the-badge&logo=patreon&logoColor=white)](https://www.patreon.com/posts/159077425)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://typescriptlang.org)
 [![MapLibre](https://img.shields.io/badge/MapLibre_GL-GPU_Rendered-396CB2?style=for-the-badge)](https://maplibre.org)
 [![License](https://img.shields.io/badge/License-MIT-D4AF37?style=for-the-badge)](LICENSE)
 
-**A real-time global intelligence dashboard that aggregates live flight tracking, CCTV networks, earthquake monitoring, conflict zone mapping, and 24/7 news feeds into a single GPU-accelerated interface.**
-
-[Live Demo](https://osirisai.live) · [Report Bug](https://github.com/simplifaisoul/osiris/issues) · [Request Feature](https://github.com/simplifaisoul/osiris/issues) · [Join Discord](https://discord.gg/umBykEpb98)
+**[Italiano](#-italiano) · [English](#-english)**
 
 </div>
 
 ---
 
-## Overview
+## 🇮🇹 Italiano
 
-Osiris is a production-grade OSINT platform that provides situational awareness across multiple intelligence domains. Built with Next.js 16 and MapLibre GL, every data point is rendered via WebGL for 60fps performance even with thousands of concurrent entities on-screen.
+**MinervaAI** è una dashboard di intelligence globale in tempo reale: tracciamento voli, reti CCTV, terremoti, incendi, zone di conflitto, satelliti e notizie live 24/7 in un'unica interfaccia accelerata via GPU.
 
-### Key Capabilities
+L'interfaccia è disponibile in **italiano** (predefinito) e **inglese**: il selettore **IT / EN** si trova in alto a destra.
+
+### Avvio rapido
+
+```bash
+git clone https://github.com/kurisuchanxxx/MinervaAI.git
+cd MinervaAI
+npm install
+npm run dev
+```
+
+Apri [http://localhost:3000](http://localhost:3000).
+
+### Deploy su Vercel
+
+Il progetto è pronto per Vercel: importa il repository, lascia le impostazioni predefinite (framework Next.js) e fai deploy. Ogni push su `main` genera un nuovo deploy di produzione.
+
+Variabili d'ambiente utili (tutte opzionali, vedi [`.env.example`](.env.example)):
+
+| Variabile | A cosa serve |
+|-----------|--------------|
+| `NEXT_PUBLIC_SITE_URL` | URL pubblico del sito (metadati SEO / Open Graph) |
+| `SCANNER_URL` / `SCANNER_KEY` | Backend dello scanner RECON (senza, RECON risponde 503) |
+| `CLOUDFLARE_API_TOKEN` | Livelli "Internet Outages" e "Attack Origins" |
+| `ETHERSCAN_API_KEY` / `HELIUS_API_KEY` | Analisi wallet più approfondita |
+
+Senza chiavi API tutti i feed principali funzionano comunque, perché usano fonti pubbliche.
+
+### Crediti
+
+MinervaAI è un fork di **[OSIRIS](https://github.com/simplifaisoul/osiris)** di simplifaisoul, distribuito con licenza MIT. Il copyright originale è mantenuto in [LICENSE](LICENSE).
+
+---
+
+## 🇬🇧 English
+
+**MinervaAI** is a real-time global intelligence dashboard that aggregates live flight tracking, CCTV networks, earthquake monitoring, conflict zone mapping, and 24/7 news feeds into a single GPU-accelerated interface. The UI is available in Italian (default) and English — use the **IT / EN** switch in the top-right corner.
+
+### Overview
+
+MinervaAI is a production-grade OSINT platform that provides situational awareness across multiple intelligence domains. Built with Next.js 16 and MapLibre GL, every data point is rendered via WebGL for 60fps performance even with thousands of concurrent entities on-screen.
+
+#### Key Capabilities
 
 | Domain | Data Points | Sources |
 |--------|------------|---------|
@@ -43,11 +81,11 @@ Osiris is a production-grade OSINT platform that provides situational awareness 
 
 ---
 
-## Architecture
+### Architecture
 
 ```
 ┌─────────────────────────────────────────────────┐
-│                  OSIRIS CLIENT                   │
+│                  MinervaAI CLIENT                   │
 │  ┌──────────┐  ┌──────────┐  ┌───────────────┐ │
 │  │ MapLibre  │  │  HUD     │  │  RECON Toolkit│ │
 │  │  GL (GPU) │  │ Panels   │  │  Port Scan    │ │
@@ -75,15 +113,15 @@ Osiris is a production-grade OSINT platform that provides situational awareness 
 
 ---
 
-## Features
+### Features
 
-### Intelligence Layers
+#### Intelligence Layers
 - **16 toggleable data layers** with real-time entity counts
 - **GPU-accelerated rendering** — all map data rendered via WebGL, not DOM
 - **Progressive loading** — data fetched on-demand when layers are activated
 - **Viewport-aware** — only loads relevant data for the visible region
 
-### RECON Toolkit
+#### RECON Toolkit
 - **Port Scanner** — TCP connect scan with service fingerprinting
 - **DNS Lookup** — Full record resolution (A, AAAA, MX, NS, TXT, CNAME)
 - **WHOIS** — Domain/IP registration data (auto-cross-checked against OFAC SDN)
@@ -93,35 +131,35 @@ Osiris is a production-grade OSINT platform that provides situational awareness 
 - **Crypto Wallet Trace** — BTC + ETH lookup (balance, tx history, OFAC SDN sanctions flag)
 - **OFAC Sanctions Search** — query persons, organizations, vessels and aircraft against the US OFAC SDN list
 
-### Live Broadcast Network
+#### Live Broadcast Network
 - **25+ live 24/7 news streams** from global broadcasters
 - Click any news dot on the map to open the live stream
 - Feeds from NBC, CBS, ABC, Sky News, Al Jazeera, France 24, NHK, WION, and more
 
-### Telegram OSINT Layer
+#### Telegram OSINT Layer
 - **Public-channel feed** scraped from the unauthenticated `t.me/s/<channel>` web preview — no Bot API token, no MTProto
-- Default curated set of 5 channels (EN + RU/UA war reporting), overridable via `OSIRIS_TELEGRAM_CHANNELS`
+- Default curated set of 5 channels (EN + RU/UA war reporting), overridable via `MinervaAI_TELEGRAM_CHANNELS`
 - Posts are geoparsed against a multilingual place dictionary (EN + Cyrillic + Arabic) and plotted on the map
 - Click any cyan dot to read the post and jump to the original on Telegram
 
-### Crypto Wallet Intelligence
+#### Crypto Wallet Intelligence
 - **BTC** lookups via [blockstream.info](https://blockstream.info) (Esplora API, keyless)
 - **ETH** lookups via [Blockscout](https://github.com/blockscout/blockscout)'s public ETH instance (`eth.blockscout.com`, keyless)
 - Every lookup is cross-checked against the OFAC SDN sanctioned-address list (mirrored from [`0xB10C/ofac-sanctioned-digital-currency-addresses`](https://github.com/0xB10C/ofac-sanctioned-digital-currency-addresses))
 - Sanctioned wallets surface a red **SANCTIONED — OFAC SDN** badge in the RECON panel
 
-### OFAC SDN Cross-Check
+#### OFAC SDN Cross-Check
 - Standalone `SANCTIONS` tab in the RECON toolkit — full-text search across persons, organisations, vessels and aircraft
 - WHOIS and IP-intel routes auto-cross-check registrant / ASN-owner names against the SDN list and surface an inline alert
 - Data sourced from [OpenSanctions](https://www.opensanctions.org) (CC-BY 4.0) — keyless, ~7 MB cached in-memory for 24h
 
-### Conflict Zone Monitoring
+#### Conflict Zone Monitoring
 - **13 active conflict/tension zones** with severity-coded warning markers
 - Active Wars: Ukraine, Gaza, Sudan, Myanmar, DRC, Yemen
 - High Tension: Syria, Lebanon, Sahel, Somalia, Red Sea
 - Elevated: Taiwan Strait, Korean DMZ
 
-### Performance Optimized
+#### Performance Optimized
 - **75% reduction in edge requests** vs initial release
 - Aggressive polling relaxation (15-30 min intervals for stable data)
 - Static data served from memory (zero external API calls for news feeds)
@@ -129,22 +167,22 @@ Osiris is a production-grade OSINT platform that provides situational awareness 
 
 ---
 
-## Quick Start
+### Quick Start
 
 ```bash
-git clone https://github.com/simplifaisoul/osiris.git
-cd osiris
+git clone https://github.com/kurisuchanxxx/MinervaAI.git
+cd MinervaAI
 npm install
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
 
-### Docker / Self-Hosting
+#### Docker / Self-Hosting
 
 ```bash
-git clone https://github.com/simplifaisoul/osiris.git
-cd osiris
+git clone https://github.com/kurisuchanxxx/MinervaAI.git
+cd MinervaAI
 cp .env.template .env     # optional — configure keys / port
 docker compose up -d
 ```
@@ -158,26 +196,26 @@ CasaOS and API-key guide.
 **Prebuilt image (GHCR)** — skip the build and pull it directly:
 
 ```bash
-docker pull ghcr.io/simplifaisoul/osiris:latest
-docker run -d -p 3000:3000 --env-file .env ghcr.io/simplifaisoul/osiris:latest
+docker pull ghcr.io/kurisuchanxxx/minervaai:latest
+docker run -d -p 3000:3000 --env-file .env ghcr.io/kurisuchanxxx/minervaai:latest
 ```
 
-**Custom port** — the container always listens on `3000`; set `OSIRIS_PORT` in
-`.env` to change the published host port (e.g. `OSIRIS_PORT=3005`) without
+**Custom port** — the container always listens on `3000`; set `MinervaAI_PORT` in
+`.env` to change the published host port (e.g. `MinervaAI_PORT=3005`) without
 editing the compose file.
 
-### Environment Variables
+#### Environment Variables
 
-OSIRIS works **partially without any API keys** — all core feeds use public,
+MinervaAI works **partially without any API keys** — all core feeds use public,
 keyless sources. Copy [`.env.template`](.env.template) to `.env` and set only
 what you need:
 
 ```env
 # Published host port (container always listens on 3000). Default: 3000
-OSIRIS_PORT=3000
+MinervaAI_PORT=3000
 
 # RECON scanner backend (the only vars the current code reads).
-# SCANNER_KEY must match the backend's OSIRIS_KEY — generate with: openssl rand -hex 32
+# SCANNER_KEY must match the backend's MinervaAI_KEY — generate with: openssl rand -hex 32
 SCANNER_URL=
 SCANNER_KEY=
 
@@ -194,7 +232,7 @@ AIS_API_KEY=                 # aisstream.io maritime
 
 ---
 
-## Tech Stack
+### Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -208,7 +246,7 @@ AIS_API_KEY=                 # aisstream.io maritime
 
 ---
 
-## Keyboard Shortcuts
+### Keyboard Shortcuts
 
 | Key | Action |
 |-----|--------|
@@ -220,26 +258,8 @@ AIS_API_KEY=                 # aisstream.io maritime
 
 ---
 
-## License
-
-MIT — see [LICENSE](LICENSE) for details.
-
 ---
 
-<div align="center">
+### Credits & License
 
-**🛠️ SUPPORT THE OSIRIS PROJECT**
-The OSIRIS Global Intelligence Grid is entirely open-source, but running the backend scanners and data firehoses isn't cheap.
-
-If you want to help keep the servers alive, and support us to get access to better tools  unlock the **Special OSIRIS Console**, Currently Just a Cool UI. a you can officially support the project here : 
-
-🔗 [Support OSIRIS on Patreon](https://www.patreon.com/posts/159077425)
-
-*Supporters receive the `🔴 RedTeam Console` role and access to encrypted developer comms.*
-
-
-**Built by [simplifaisoul](https://github.com/simplifaisoul)**
-
-[Join our Discord to be a part of this movement!](https://discord.gg/umBykEpb98)
-
-</div>
+MinervaAI is a fork of **[OSIRIS](https://github.com/simplifaisoul/osiris)** by simplifaisoul, released under the MIT License. See [LICENSE](LICENSE) — the original copyright notice is retained.

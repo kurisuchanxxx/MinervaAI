@@ -23,6 +23,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
+import { defineMessages, useT } from '@/lib/i18n';
 
 /* ═══════════════════════════════════════════════════════════════
    ArcGIS Search & Import Panel — MinervaAI OSINT Dashboard
@@ -58,12 +59,89 @@ export interface ArcGISPanelProps {
   mapBounds?: { west: number; south: number; east: number; north: number } | null;
 }
 
+const MESSAGES = defineMessages({
+  en: {
+    catPipelines: 'Pipelines',
+    catPowerGrid: 'Power Grid',
+    catInfrastructure: 'Infrastructure',
+    catMilitary: 'Military',
+    catEmergency: 'Emergency',
+    searchFailed: 'Search failed',
+    searchFailedStatus: 'Search failed ({status})',
+    importFailed: 'Import failed',
+    importFailedStatus: 'Import failed ({status})',
+    layersActive: '{n} Layers Active',
+    features: '{n} Features',
+    mapExtent: 'Map Extent:',
+    extentRange: '{sw} to {ne}',
+    activeDataLayers: 'Active Data Layers',
+    hideLayer: 'Hide layer',
+    showLayer: 'Show layer',
+    layerSettings: 'Layer settings',
+    removeLayer: 'Remove Layer',
+    color: 'Color',
+    opacity: 'Opacity',
+    searchPlaceholder: 'Search ArcGIS layers...',
+    scan: 'SCAN',
+    layerOne: '{n} layer',
+    layerMany: '{n} layers',
+    resultsFor: 'for “{q}”',
+    liveCount: '{n} live',
+    live: 'LIVE',
+    loading: 'LOADING...',
+    import: 'IMPORT',
+    noDescription: 'No description published for this layer.',
+    moreTags: '+{n} more',
+    noSearch: 'No active search',
+    emptyHint: 'Try searching for Power Plants, Substations, Evacuation Routes, or Pipelines in the designated area.',
+    publicSource: 'ArcGIS PUBLIC',
+    connectionHealth: 'Connection Health',
+  },
+  it: {
+    catPipelines: 'Condotte',
+    catPowerGrid: 'Rete elettrica',
+    catInfrastructure: 'Infrastrutture',
+    catMilitary: 'Militare',
+    catEmergency: 'Emergenza',
+    searchFailed: 'Ricerca non riuscita',
+    searchFailedStatus: 'Ricerca non riuscita ({status})',
+    importFailed: 'Importazione non riuscita',
+    importFailedStatus: 'Importazione non riuscita ({status})',
+    layersActive: '{n} livelli attivi',
+    features: '{n} elementi',
+    mapExtent: 'Estensione mappa:',
+    extentRange: '{sw} a {ne}',
+    activeDataLayers: 'Livelli dati attivi',
+    hideLayer: 'Nascondi livello',
+    showLayer: 'Mostra livello',
+    layerSettings: 'Impostazioni livello',
+    removeLayer: 'Rimuovi livello',
+    color: 'Colore',
+    opacity: 'Opacità',
+    searchPlaceholder: 'Cerca livelli ArcGIS...',
+    scan: 'CERCA',
+    layerOne: '{n} livello',
+    layerMany: '{n} livelli',
+    resultsFor: 'per “{q}”',
+    liveCount: '{n} live',
+    live: 'LIVE',
+    loading: 'CARICAMENTO...',
+    import: 'IMPORTA',
+    noDescription: 'Nessuna descrizione pubblicata per questo livello.',
+    moreTags: '+{n} altri',
+    noSearch: 'Nessuna ricerca attiva',
+    emptyHint: "Prova a cercare centrali elettriche, sottostazioni, vie di evacuazione o condotte nell'area indicata.",
+    publicSource: 'ArcGIS PUBBLICO',
+    connectionHealth: 'Stato connessione',
+  },
+});
+
 const CATEGORIES = [
-  { label: 'Pipelines', query: 'pipeline' },
-  { label: 'Power Grid', query: 'power grid transmission' },
-  { label: 'Infrastructure', query: 'critical infrastructure' },
-  { label: 'Military', query: 'military base installation' },
-  { label: 'Emergency', query: 'emergency shelter evacuation' },
+  { id: 'pipelines', label: 'catPipelines', query: 'pipeline' },
+  { id: 'power_grid', label: 'catPowerGrid', query: 'power grid transmission' },
+  { id: 'infrastructure', label: 'catInfrastructure', query: 'critical infrastructure' },
+  { id: 'military', label: 'catMilitary', query: 'military base installation' },
+  { id: 'emergency', label: 'catEmergency', query: 'emergency shelter evacuation' },
 ] as const;
 
 const LAYER_COLORS = [
@@ -95,6 +173,7 @@ export default function ArcGISPanel({
   importedLayers,
   mapBounds,
 }: ArcGISPanelProps) {
+  const t = useT(MESSAGES);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<ArcGISResult[]>([]);
   const [searching, setSearching] = useState(false);
@@ -127,19 +206,19 @@ export default function ArcGISPanel({
         const res = await fetch(`/api/arcgis?${params.toString()}`);
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || `Search failed (${res.status})`);
+          throw new Error(err.error || t('searchFailedStatus', { status: res.status }));
         }
 
         const data = await res.json();
         setResults(data.results || []);
         setResultsFor(searchQuery);
       } catch (err: any) {
-        setError(err.message || 'Search failed');
+        setError(err.message || t('searchFailed'));
       } finally {
         setSearching(false);
       }
     },
-    [bboxParam],
+    [bboxParam, t],
   );
 
   const handleImport = useCallback(
@@ -155,7 +234,7 @@ export default function ArcGISPanel({
         const res = await fetch(`/api/arcgis?${params.toString()}`);
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || `Import failed (${res.status})`);
+          throw new Error(err.error || t('importFailedStatus', { status: res.status }));
         }
 
         const geojson = await res.json();
@@ -169,17 +248,17 @@ export default function ArcGISPanel({
         const availableColor = LAYER_COLORS.find(c => !usedColors.includes(c)) || LAYER_COLORS[importedLayers.length % LAYER_COLORS.length];
         onImportLayer({ id: result.id, title: result.title, url: result.url, geojson, color: availableColor, opacity: 0.8 });
       } catch (err: any) {
-        setError(err.message || 'Import failed');
+        setError(err.message || t('importFailed'));
       } finally {
         setImportingId(null);
       }
     },
-    [bboxParam, onImportLayer, importedLayers],
+    [bboxParam, onImportLayer, importedLayers, t],
   );
 
   const handleCategory = (cat: (typeof CATEGORIES)[number]) => {
-    const isActive = activeCategory === cat.label;
-    setActiveCategory(isActive ? null : cat.label);
+    const isActive = activeCategory === cat.id;
+    setActiveCategory(isActive ? null : cat.id);
     if (!isActive) {
       setQuery(cat.query);
       runSearch(cat.query);
@@ -200,10 +279,10 @@ export default function ArcGISPanel({
         </div>
         <div className="text-right">
           <div className="text-[10px] font-mono text-[#D4AF37]/80 uppercase tracking-widest">
-            {importedLayers.length} Layers Active
+            {t('layersActive', { n: importedLayers.length })}
           </div>
           <div className="text-[10px] font-mono font-bold text-[#D4AF37] tabular-nums">
-            {totalFeatures.toLocaleString()} Features
+            {t('features', { n: totalFeatures.toLocaleString() })}
           </div>
         </div>
       </div>
@@ -213,10 +292,13 @@ export default function ArcGISPanel({
         <div className="flex items-center gap-2 px-2 py-1 rounded border border-white/[0.04] bg-white/[0.02]">
           <Globe className="w-3 h-3 text-[var(--text-muted)]" />
           <span className="text-[9px] font-mono text-[var(--text-muted)] uppercase tracking-wider flex-1">
-            Map Extent:
+            {t('mapExtent')}
           </span>
           <span className="text-[9px] font-mono text-[var(--text-muted)] tabular-nums truncate max-w-[150px]">
-            {mapBounds.west.toFixed(2)}, {mapBounds.south.toFixed(2)} to {mapBounds.east.toFixed(2)}, {mapBounds.north.toFixed(2)}
+            {t('extentRange', {
+              sw: `${mapBounds.west.toFixed(2)}, ${mapBounds.south.toFixed(2)}`,
+              ne: `${mapBounds.east.toFixed(2)}, ${mapBounds.north.toFixed(2)}`,
+            })}
           </span>
         </div>
       )}
@@ -225,7 +307,7 @@ export default function ArcGISPanel({
       {importedLayers.length > 0 && (
         <div className="flex flex-col gap-1.5 shrink-0">
           <span className="text-[9px] font-mono tracking-[0.2em] uppercase text-[var(--text-muted)] px-1">
-            Active Data Layers
+            {t('activeDataLayers')}
           </span>
           <div className="flex flex-col gap-1 max-h-[220px] overflow-y-auto styled-scrollbar">
             <AnimatePresence>
@@ -256,7 +338,7 @@ export default function ArcGISPanel({
                       <button
                         onClick={() => onUpdateLayer(layer.id, { visible: !layer.visible })}
                         className="flex-shrink-0 p-0.5 rounded hover:bg-white/10 transition-colors"
-                        title={layer.visible ? 'Hide layer' : 'Show layer'}
+                        title={layer.visible ? t('hideLayer') : t('showLayer')}
                       >
                         {layer.visible ? (
                           <Eye className="w-3 h-3 text-white/70" />
@@ -284,7 +366,7 @@ export default function ArcGISPanel({
                       <button
                         onClick={() => setExpandedLayerId(isExpanded ? null : layer.id)}
                         className="flex-shrink-0 p-0.5 rounded hover:bg-white/10 transition-colors text-white/40 hover:text-white/70"
-                        title="Layer settings"
+                        title={t('layerSettings')}
                       >
                         <SlidersHorizontal className="w-3 h-3" />
                       </button>
@@ -301,7 +383,7 @@ export default function ArcGISPanel({
                           if (isExpanded) setExpandedLayerId(null);
                         }}
                         className="flex-shrink-0 p-0.5 rounded text-red-400/40 hover:text-red-400 hover:bg-red-400/10 transition-colors"
-                        title="Remove Layer"
+                        title={t('removeLayer')}
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -321,7 +403,7 @@ export default function ArcGISPanel({
                             {/* Color Swatches */}
                             <div className="flex flex-col gap-1">
                               <span className="text-[9px] font-mono tracking-[0.2em] uppercase text-[var(--text-muted)] flex items-center gap-1">
-                                <Palette className="w-2.5 h-2.5" /> Color
+                                <Palette className="w-2.5 h-2.5" /> {t('color')}
                               </span>
                               <div className="flex flex-wrap gap-1.5">
                                 {LAYER_COLORS.map((c) => (
@@ -346,7 +428,7 @@ export default function ArcGISPanel({
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center justify-between">
                                 <span className="text-[9px] font-mono tracking-[0.2em] uppercase text-[var(--text-muted)] flex items-center gap-1">
-                                  <Eye className="w-2.5 h-2.5" /> Opacity
+                                  <Eye className="w-2.5 h-2.5" /> {t('opacity')}
                                 </span>
                                 <span className="text-[10px] font-mono font-bold tabular-nums" style={{ color: layer.color }}>
                                   {Math.round(layer.opacity * 100)}%
@@ -388,7 +470,7 @@ export default function ArcGISPanel({
             setActiveCategory(null);
           }}
           onKeyDown={(e) => e.key === 'Enter' && runSearch(query)}
-          placeholder="Search ArcGIS layers..."
+          placeholder={t('searchPlaceholder')}
           className="w-full bg-black/60 border border-white/10 rounded-lg pl-8 pr-16 py-2.5 text-[10px] font-mono text-white placeholder:text-[var(--text-muted)]/40 focus:outline-none focus:border-[#D4AF37]/50 transition-colors"
         />
         <button
@@ -396,7 +478,7 @@ export default function ArcGISPanel({
           disabled={searching || !query.trim()}
           className="absolute right-1 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-md text-[10px] font-mono font-bold tracking-widest uppercase disabled:opacity-30 transition-all bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/20"
         >
-          {searching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'SCAN'}
+          {searching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : t('scan')}
         </button>
       </div>
 
@@ -404,15 +486,15 @@ export default function ArcGISPanel({
       <div className="flex flex-wrap gap-1.5 shrink-0">
         {CATEGORIES.map((cat) => (
           <button
-            key={cat.label}
+            key={cat.id}
             onClick={() => handleCategory(cat)}
             className={`px-3 py-1.5 rounded-full text-[9px] font-mono tracking-[0.1em] uppercase transition-all border ${
-              activeCategory === cat.label
+              activeCategory === cat.id
                 ? 'bg-[#D4AF37]/20 border-[#D4AF37]/50 text-[#D4AF37] shadow-[0_0_12px_rgba(212,175,55,0.3)]'
                 : 'bg-white/[0.03] border-white/[0.08] text-[var(--text-muted)] hover:bg-white/[0.06] hover:border-white/20'
             }`}
           >
-            {cat.label}
+            {t(cat.label)}
           </button>
         ))}
       </div>
@@ -451,16 +533,16 @@ export default function ArcGISPanel({
         {!searching && results.length > 0 && (
           <div className="flex items-baseline gap-2 px-1 pb-0.5">
             <span className="text-[10px] font-mono text-white tabular-nums">
-              {results.length} layer{results.length === 1 ? '' : 's'}
+              {t(results.length === 1 ? 'layerOne' : 'layerMany', { n: results.length })}
             </span>
             {resultsFor && (
               <span className="text-[9px] font-mono text-[var(--text-muted)] truncate">
-                for &ldquo;{resultsFor}&rdquo;
+                {t('resultsFor', { q: resultsFor })}
               </span>
             )}
             {results.filter(r => importedIds.includes(r.id)).length > 0 && (
               <span className="ml-auto text-[9px] font-mono text-[var(--alert-green)] tabular-nums flex-shrink-0">
-                {results.filter(r => importedIds.includes(r.id)).length} live
+                {t('liveCount', { n: results.filter(r => importedIds.includes(r.id)).length })}
               </span>
             )}
           </div>
@@ -524,7 +606,7 @@ export default function ArcGISPanel({
                         }}
                       >
                         <CheckCircle className="w-3 h-3" />
-                        LIVE
+                        {t('live')}
                       </span>
                     ) : (
                       <button
@@ -535,12 +617,12 @@ export default function ArcGISPanel({
                         {isImporting ? (
                           <>
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            LOADING...
+                            {t('loading')}
                           </>
                         ) : (
                           <>
                             <Download className="w-3 h-3" />
-                            IMPORT
+                            {t('import')}
                           </>
                         )}
                       </button>
@@ -551,7 +633,7 @@ export default function ArcGISPanel({
                   <p className={`text-[10px] font-mono leading-relaxed line-clamp-2 mt-0.5 ${
                     result.snippet ? 'text-[var(--text-muted)]/80' : 'text-[var(--text-muted)]/40 italic'
                   }`}>
-                    {result.snippet || 'No description published for this layer.'}
+                    {result.snippet || t('noDescription')}
                   </p>
 
                   {/* Tags */}
@@ -567,7 +649,7 @@ export default function ArcGISPanel({
                       ))}
                       {result.tags.length > 4 && (
                         <span className="text-[9px] font-mono text-[var(--text-muted)]/50 flex items-center px-1">
-                          +{result.tags.length - 4} more
+                          {t('moreTags', { n: result.tags.length - 4 })}
                         </span>
                       )}
                     </div>
@@ -586,10 +668,10 @@ export default function ArcGISPanel({
             </div>
             <div className="flex flex-col items-center gap-1.5 text-center">
               <span className="text-[10px] font-mono font-bold text-white tracking-wide">
-                No active search
+                {t('noSearch')}
               </span>
               <span className="text-[10px] font-mono text-[var(--text-muted)] max-w-[200px] leading-relaxed">
-                Try searching for Power Plants, Substations, Evacuation Routes, or Pipelines in the designated area.
+                {t('emptyHint')}
               </span>
             </div>
           </div>
@@ -601,12 +683,12 @@ export default function ArcGISPanel({
         <div className="flex items-center gap-1.5">
           <Radio className="w-3 h-3 text-[#D4AF37]" />
           <span className="text-[9px] font-mono tracking-[0.2em] uppercase text-[#D4AF37]/80">
-            ArcGIS PUBLIC
+            {t('publicSource')}
           </span>
         </div>
         <div className="flex items-center gap-2.5">
           <span className="text-[9px] font-mono text-[var(--text-muted)] uppercase tracking-wider">
-            Connection Health
+            {t('connectionHealth')}
           </span>
           <div className="relative flex items-center justify-center">
             <Wifi className={`w-3 h-3 ${searching ? 'text-[#D4AF37]' : 'text-[var(--alert-green)]'}`} />

@@ -5,6 +5,12 @@ import { Maximize2 } from 'lucide-react';
 import { freshen, previewMedia, refreshInterval, VIDEO_KINDS, type PreviewKind } from '@/lib/camera-preview';
 import { layoutTile, tileHeight, tilesOverlap, type TileGeometry } from '@/lib/map-tile-layout';
 import type { Map as MlMap } from 'maplibre-gl';
+import { defineMessages, translate, useLang, useT } from '@/lib/i18n';
+
+const MESSAGES = defineMessages({
+  en: { open: 'OPEN', linking: 'LINKING', camera: 'CAMERA' },
+  it: { open: 'APRI', linking: 'COLLEGAMENTO', camera: 'TELECAMERA' },
+});
 
 /**
  * MinervaAI — live CCTV previews on the map
@@ -185,6 +191,7 @@ function VideoMedia({ cam: camera, onReady, onFail }: MediaProps) {
 }
 
 function Tile({ cam: camera, onOpen }: { cam: PreviewCamera; onOpen: (cam: PreviewCamera) => void }) {
+  const t = useT(MESSAGES);
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -253,7 +260,7 @@ function Tile({ cam: camera, onOpen }: { cam: PreviewCamera; onOpen: (cam: Previ
           style={{ color: CAM }}
         >
           <Maximize2 className="h-2 w-2" />
-          <span className="font-mono text-[7px] tracking-[0.18em]">OPEN</span>
+          <span className="font-mono text-[7px] tracking-[0.18em]">{t('open')}</span>
         </div>
 
         {!loaded && (
@@ -266,7 +273,7 @@ function Tile({ cam: camera, onOpen }: { cam: PreviewCamera; onOpen: (cam: Previ
               }}
             />
             <div className="absolute inset-0 flex items-center justify-center font-mono text-[7px] tracking-[0.25em] text-white/30">
-              LINKING
+              {t('linking')}
             </div>
           </div>
         )}
@@ -319,6 +326,7 @@ function CctvPreviews({ mapRef, active, onOpen }: {
   active: boolean;
   onOpen: (cam: PreviewCamera) => void;
 }) {
+  const { lang } = useLang();
   const [cams, setCams] = useState<PreviewCamera[]>([]);
   const nodes = useRef(new Map<string, HTMLDivElement | null>());
 
@@ -363,7 +371,7 @@ function CctvPreviews({ mapRef, active, onOpen }: {
       candidates.push({
         cam: {
           id,
-          name: String(p.name ?? 'CAMERA'),
+          name: String(p.name ?? translate(MESSAGES, lang, 'camera')),
           lng: coords[0],
           lat: coords[1],
           feed_url: String(p.feed_url ?? ''),
@@ -403,7 +411,7 @@ function CctvPreviews({ mapRef, active, onOpen }: {
       const same = prev.length === picked.length && prev.every((p, i) => p.id === picked[i].cam.id);
       return same ? prev : picked.map(p => p.cam);
     });
-  }, [mapRef, active]);
+  }, [mapRef, active, lang]);
 
   useEffect(() => {
     const map = mapRef.current;

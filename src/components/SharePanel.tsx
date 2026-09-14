@@ -3,6 +3,42 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Share2, Copy, Check, Link2, X, Globe, MapPin } from 'lucide-react';
+import { defineMessages, useT } from '@/lib/i18n';
+
+const MESSAGES = defineMessages({
+  en: {
+    shareButton: 'Share view (S)',
+    shareView: 'SHARE VIEW',
+    currentView: 'CURRENT VIEW',
+    zoom: 'Zoom {z}',
+    layersActive: '{n} layers active',
+    shareableLink: 'SHAREABLE LINK',
+    copyLink: 'Copy link',
+    copied: 'Copied',
+    close: 'Close',
+    tweetText: '🦉 MinervaAI — Global Intelligence Dashboard',
+    redditTitle: 'MinervaAI — Open Source Global Intelligence Platform',
+    xPost: '𝕏 POST',
+    linkedinShare: 'IN SHARE',
+    footer: 'PRESS [S] TO TOGGLE · SHAREABLE LINKS PRESERVE VIEW STATE',
+  },
+  it: {
+    shareButton: 'Condividi vista (S)',
+    shareView: 'CONDIVIDI VISTA',
+    currentView: 'VISTA ATTUALE',
+    zoom: 'Zoom {z}',
+    layersActive: '{n} livelli attivi',
+    shareableLink: 'LINK CONDIVISIBILE',
+    copyLink: 'Copia link',
+    copied: 'Copiato',
+    close: 'Chiudi',
+    tweetText: '🦉 MinervaAI — Dashboard di intelligence globale',
+    redditTitle: 'MinervaAI — Piattaforma open source di intelligence globale',
+    xPost: '𝕏 POST',
+    linkedinShare: 'IN CONDIVIDI',
+    footer: 'PREMI [S] PER APRIRE/CHIUDERE · I LINK CONSERVANO LO STATO DELLA VISTA',
+  },
+});
 
 interface SharePanelProps {
   mapView: { zoom: number; latitude: number; longitude?: number };
@@ -11,6 +47,7 @@ interface SharePanelProps {
 }
 
 export default function SharePanel({ mapView, activeLayers, mouseCoords }: SharePanelProps) {
+  const t = useT(MESSAGES);
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -71,7 +108,7 @@ export default function SharePanel({ mapView, activeLayers, mouseCoords }: Share
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         className="glass-panel w-8 h-8 flex items-center justify-center pointer-events-auto hover:border-[var(--gold-primary)] transition-colors"
-        title="Share view (S)"
+        title={t('shareButton')}
       >
         <Share2 className="w-3.5 h-3.5 text-[var(--gold-primary)]" />
       </motion.button>
@@ -88,9 +125,9 @@ export default function SharePanel({ mapView, activeLayers, mouseCoords }: Share
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Globe className="w-3.5 h-3.5 text-[var(--gold-primary)]" />
-                <span className="hud-text text-[11px] text-[var(--text-primary)]">SHARE VIEW</span>
+                <span className="hud-text text-[11px] text-[var(--text-primary)]">{t('shareView')}</span>
               </div>
-              <button onClick={() => setIsOpen(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+              <button onClick={() => setIsOpen(false)} title={t('close')} aria-label={t('close')} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
                 <X className="w-3 h-3" />
               </button>
             </div>
@@ -99,13 +136,13 @@ export default function SharePanel({ mapView, activeLayers, mouseCoords }: Share
             <div className="mb-3 p-2 rounded-lg bg-[var(--bg-void)] border border-[var(--border-primary)]">
               <div className="flex items-center gap-1.5 mb-1">
                 <MapPin className="w-2.5 h-2.5 text-[var(--gold-primary)]" />
-                <span className="text-[9px] font-mono text-[var(--text-muted)] tracking-widest">CURRENT VIEW</span>
+                <span className="text-[9px] font-mono text-[var(--text-muted)] tracking-widest">{t('currentView')}</span>
               </div>
               <div className="text-[9px] font-mono text-[var(--text-secondary)]">
-                {mouseCoords ? `${mouseCoords.lat.toFixed(4)}°, ${mouseCoords.lng.toFixed(4)}°` : '—'} · Zoom {mapView.zoom.toFixed(1)}
+                {mouseCoords ? `${mouseCoords.lat.toFixed(4)}°, ${mouseCoords.lng.toFixed(4)}°` : '—'} · {t('zoom', { z: mapView.zoom.toFixed(1) })}
               </div>
               <div className="text-[9px] font-mono text-[var(--text-muted)] mt-1">
-                {Object.values(activeLayers).filter(Boolean).length} layers active
+                {t('layersActive', { n: Object.values(activeLayers).filter(Boolean).length })}
               </div>
             </div>
 
@@ -113,7 +150,7 @@ export default function SharePanel({ mapView, activeLayers, mouseCoords }: Share
             <div className="mb-3">
               <div className="flex items-center gap-1.5 mb-1">
                 <Link2 className="w-2.5 h-2.5 text-[var(--text-muted)]" />
-                <span className="text-[9px] font-mono text-[var(--text-muted)] tracking-widest">SHAREABLE LINK</span>
+                <span className="text-[9px] font-mono text-[var(--text-muted)] tracking-widest">{t('shareableLink')}</span>
               </div>
               <div className="flex gap-1.5">
                 <div className="flex-1 p-1.5 rounded bg-[var(--bg-void)] border border-[var(--border-primary)] text-[9px] font-mono text-[var(--gold-primary)] truncate">
@@ -121,6 +158,8 @@ export default function SharePanel({ mapView, activeLayers, mouseCoords }: Share
                 </div>
                 <button
                   onClick={copyToClipboard}
+                  title={copied ? t('copied') : t('copyLink')}
+                  aria-label={copied ? t('copied') : t('copyLink')}
                   className={`px-3 py-1.5 rounded text-[9px] font-mono tracking-widest transition-all ${copied ? 'bg-[var(--alert-green)]/20 text-[var(--alert-green)] border border-[var(--alert-green)]/30' : 'bg-[var(--gold-primary)]/10 text-[var(--gold-primary)] border border-[var(--gold-primary)]/30 hover:bg-[var(--gold-primary)]/20'}`}
                 >
                   {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
@@ -131,21 +170,21 @@ export default function SharePanel({ mapView, activeLayers, mouseCoords }: Share
             {/* Quick Share */}
             <div className="flex gap-2">
               <a
-                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent('🦉 MinervaAI — Global Intelligence Dashboard')}&url=${encodeURIComponent(generateShareUrl())}`}
+                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(t('tweetText'))}&url=${encodeURIComponent(generateShareUrl())}`}
                 target="_blank"
                 className="flex-1 text-center py-1.5 rounded text-[9px] font-mono tracking-wider text-[var(--text-muted)] border border-[var(--border-primary)] hover:border-[#1DA1F2] hover:text-[#1DA1F2] transition-colors"
               >
-                𝕏 POST
+                {t('xPost')}
               </a>
               <a
                 href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(generateShareUrl())}`}
                 target="_blank"
                 className="flex-1 text-center py-1.5 rounded text-[9px] font-mono tracking-wider text-[var(--text-muted)] border border-[var(--border-primary)] hover:border-[#0A66C2] hover:text-[#0A66C2] transition-colors"
               >
-                IN SHARE
+                {t('linkedinShare')}
               </a>
               <a
-                href={`https://reddit.com/submit?url=${encodeURIComponent(generateShareUrl())}&title=${encodeURIComponent('MinervaAI — Open Source Global Intelligence Platform')}`}
+                href={`https://reddit.com/submit?url=${encodeURIComponent(generateShareUrl())}&title=${encodeURIComponent(t('redditTitle'))}`}
                 target="_blank"
                 className="flex-1 text-center py-1.5 rounded text-[9px] font-mono tracking-wider text-[var(--text-muted)] border border-[var(--border-primary)] hover:border-[#FF4500] hover:text-[#FF4500] transition-colors"
               >
@@ -154,7 +193,7 @@ export default function SharePanel({ mapView, activeLayers, mouseCoords }: Share
             </div>
 
             <div className="mt-3 text-center text-[9px] font-mono text-[var(--text-muted)] tracking-widest">
-              PRESS [S] TO TOGGLE · SHAREABLE LINKS PRESERVE VIEW STATE
+              {t('footer')}
             </div>
           </motion.div>
         )}

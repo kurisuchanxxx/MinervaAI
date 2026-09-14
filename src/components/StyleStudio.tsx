@@ -19,6 +19,202 @@ import {
   shade,
   type StyleSettings,
 } from '@/lib/style-tokens';
+import { defineMessages, useT } from '@/lib/i18n';
+
+const MESSAGES = defineMessages({
+  en: {
+    followingApp: '{label}: following the app\'s own styling',
+    overridden: '{label}: overridden',
+    restoreDefaultTitle: 'Restore the default {label}',
+    restoreDefaultAria: 'Restore default {label}',
+    liveTokens: 'Live UI tokens',
+    pasteTitle: 'Paste a shared theme from the clipboard',
+    pasteAria: 'Paste theme',
+    copyTitle: 'Copy this theme as JSON',
+    copyAria: 'Copy theme',
+    resetTitle: 'Reset to the active theme',
+    reset: 'Reset',
+    close: 'Close',
+    closeStudio: 'Close Style Studio',
+    secPreset: 'Preset',
+    secAccent: 'Accent',
+    primary: 'Primary',
+    secondary: 'Secondary',
+    glow: 'Glow',
+    primaryAccent: 'Primary accent',
+    secondaryAccent: 'Secondary accent',
+    glowStrength: 'Glow strength',
+    secSignal: 'Signal',
+    critical: 'Critical',
+    warning: 'Warning',
+    nominal: 'Nominal',
+    info: 'Info',
+    criticalColour: 'Critical colour',
+    warningColour: 'Warning colour',
+    nominalColour: 'Nominal colour',
+    infoColour: 'Info colour',
+    secMapControls: 'Map controls',
+    panZoomPad: 'Pan/zoom pad',
+    panZoomPadAria: 'On-screen pan and zoom pad',
+    secMapLayers: 'Map layers',
+    cameras: 'Cameras',
+    dotsLabels: 'Dots & labels',
+    cameraColour: 'Camera colour',
+    satellites: 'Satellites',
+    satellitesNote: 'Default keeps each satellite\'s own mission colour. Change one and it takes over that whole category.',
+    comms: 'Comms',
+    military: 'Military',
+    navigation: 'Navigation',
+    earthObs: 'Earth obs',
+    science: 'Science',
+    other: 'Other',
+    commsSats: 'Comms satellites',
+    militarySats: 'Military satellites',
+    navigationSats: 'Navigation satellites',
+    earthSats: 'Earth observation satellites',
+    scienceSats: 'Science satellites',
+    otherSats: 'Other satellites',
+    aircraft: 'Aircraft',
+    civil: 'Civil',
+    private: 'Private',
+    government: 'Government',
+    unknown: 'Unknown',
+    civilAircraft: 'Civil aircraft',
+    privateAircraft: 'Private aircraft',
+    govAircraft: 'Government aircraft',
+    militaryAircraft: 'Military aircraft',
+    unknownAircraft: 'Unknown aircraft',
+    secSurface: 'Surface',
+    background: 'Background',
+    panel: 'Panel',
+    border: 'Border',
+    blur: 'Blur',
+    radius: 'Radius',
+    backgroundColour: 'Background colour',
+    panelOpacity: 'Panel opacity',
+    borderStrength: 'Border strength',
+    backdropBlur: 'Backdrop blur',
+    cornerRadius: 'Corner radius',
+    secText: 'Text',
+    muted: 'Muted',
+    heading: 'Heading',
+    primaryText: 'Primary text',
+    secondaryText: 'Secondary text',
+    mutedText: 'Muted text',
+    headingText: 'Heading text',
+    secTypography: 'Typography',
+    uiFont: 'UI font',
+    monoFont: 'Mono font',
+    tracking: 'Tracking',
+    monoTracking: 'Mono tracking',
+    secMotion: 'Motion & FX',
+    speed: 'Speed',
+    scanlines: 'Scanlines',
+    grain: 'Grain',
+    vignette: 'Vignette',
+    motionSpeed: 'Motion speed',
+    scanlineOverlay: 'Scanline overlay',
+    grainOverlay: 'Film grain overlay',
+    edgeVignette: 'Edge vignette',
+    footer: 'Saved to this browser. AUTO leaves the app\'s own styling alone, and presets do not touch the map layers — those carry meaning, not just a look. Reset restores the active theme.',
+  },
+  it: {
+    followingApp: '{label}: segue lo stile dell\'app',
+    overridden: '{label}: personalizzato',
+    restoreDefaultTitle: 'Ripristina il valore predefinito: {label}',
+    restoreDefaultAria: 'Ripristina predefinito: {label}',
+    liveTokens: 'Token UI dal vivo',
+    pasteTitle: 'Incolla un tema condiviso dagli appunti',
+    pasteAria: 'Incolla tema',
+    copyTitle: 'Copia questo tema come JSON',
+    copyAria: 'Copia tema',
+    resetTitle: 'Ripristina il tema attivo',
+    reset: 'Ripristina',
+    close: 'Chiudi',
+    closeStudio: 'Chiudi Style Studio',
+    secPreset: 'Preset',
+    secAccent: 'Accento',
+    primary: 'Primario',
+    secondary: 'Secondario',
+    glow: 'Bagliore',
+    primaryAccent: 'Accento primario',
+    secondaryAccent: 'Accento secondario',
+    glowStrength: 'Intensità bagliore',
+    secSignal: 'Segnali',
+    critical: 'Critico',
+    warning: 'Avviso',
+    nominal: 'Nominale',
+    info: 'Info',
+    criticalColour: 'Colore critico',
+    warningColour: 'Colore avviso',
+    nominalColour: 'Colore nominale',
+    infoColour: 'Colore info',
+    secMapControls: 'Controlli mappa',
+    panZoomPad: 'Pad pan/zoom',
+    panZoomPadAria: 'Pad di pan e zoom a schermo',
+    secMapLayers: 'Livelli mappa',
+    cameras: 'Telecamere',
+    dotsLabels: 'Punti ed etichette',
+    cameraColour: 'Colore telecamere',
+    satellites: 'Satelliti',
+    satellitesNote: 'Il predefinito mantiene il colore di missione di ogni satellite. Cambiandone uno si applica all\'intera categoria.',
+    comms: 'Comunicaz.',
+    military: 'Militari',
+    navigation: 'Navigazione',
+    earthObs: 'Oss. Terra',
+    science: 'Scienza',
+    other: 'Altri',
+    commsSats: 'Satelliti di comunicazione',
+    militarySats: 'Satelliti militari',
+    navigationSats: 'Satelliti di navigazione',
+    earthSats: 'Satelliti di osservazione terrestre',
+    scienceSats: 'Satelliti scientifici',
+    otherSats: 'Altri satelliti',
+    aircraft: 'Aerei',
+    civil: 'Civili',
+    private: 'Privati',
+    government: 'Governativi',
+    unknown: 'Sconosciuti',
+    civilAircraft: 'Aerei civili',
+    privateAircraft: 'Aerei privati',
+    govAircraft: 'Aerei governativi',
+    militaryAircraft: 'Aerei militari',
+    unknownAircraft: 'Aerei sconosciuti',
+    secSurface: 'Superficie',
+    background: 'Sfondo',
+    panel: 'Pannello',
+    border: 'Bordo',
+    blur: 'Sfocatura',
+    radius: 'Raggio',
+    backgroundColour: 'Colore sfondo',
+    panelOpacity: 'Opacità pannello',
+    borderStrength: 'Intensità bordo',
+    backdropBlur: 'Sfocatura sfondo',
+    cornerRadius: 'Raggio angoli',
+    secText: 'Testo',
+    muted: 'Attenuato',
+    heading: 'Titoli',
+    primaryText: 'Testo primario',
+    secondaryText: 'Testo secondario',
+    mutedText: 'Testo attenuato',
+    headingText: 'Testo titoli',
+    secTypography: 'Tipografia',
+    uiFont: 'Font UI',
+    monoFont: 'Font mono',
+    tracking: 'Spaziatura',
+    monoTracking: 'Spaziatura mono',
+    secMotion: 'Movimento & FX',
+    speed: 'Velocità',
+    scanlines: 'Scanline',
+    grain: 'Grana',
+    vignette: 'Vignettatura',
+    motionSpeed: 'Velocità animazioni',
+    scanlineOverlay: 'Sovrapposizione scanline',
+    grainOverlay: 'Grana pellicola',
+    edgeVignette: 'Vignettatura bordi',
+    footer: 'Salvato in questo browser. AUTO lascia intatto lo stile dell\'app e i preset non toccano i livelli della mappa — quelli hanno un significato, non solo un aspetto. Ripristina riporta il tema attivo.',
+  },
+});
 
 /**
  * Style Studio — the panel. All token maths lives in `@/lib/style-tokens`;
@@ -81,13 +277,14 @@ function AutoSlider({ label, value, min, max, step, whenEnabled, onChange, forma
   label: string; value: number | null; min: number; max: number; step: number;
   whenEnabled: number; onChange: (v: number | null) => void; format: (v: number) => string;
 }) {
+  const t = useT(MESSAGES);
   const auto = value === null;
   return (
     <div className="flex items-center gap-1.5 flex-1 max-w-[168px]">
       <button
         onClick={() => onChange(auto ? whenEnabled : null)}
         aria-pressed={auto}
-        title={auto ? `${label}: following the app's own styling` : `${label}: overridden`}
+        title={auto ? t('followingApp', { label }) : t('overridden', { label })}
         className={`px-1.5 py-0.5 rounded text-[8px] font-mono tracking-wider border transition-colors shrink-0 ${
           auto
             ? 'border-[var(--border-active)] bg-[var(--gold-primary)]/15 text-[var(--gold-light)]'
@@ -156,13 +353,14 @@ function SubHead({ label, note }: { label: string; note?: string }) {
 function ResettableSwatch({ label, value, fallback, onChange }: {
   label: string; value: string; fallback: string; onChange: (v: string) => void;
 }) {
+  const t = useT(MESSAGES);
   const changed = value.toLowerCase() !== fallback.toLowerCase();
   return (
     <div className="flex items-center gap-1.5">
       <button
         onClick={() => onChange(fallback)}
-        title={`Restore the default ${label.toLowerCase()}`}
-        aria-label={`Restore default ${label}`}
+        title={t('restoreDefaultTitle', { label: label.toLowerCase() })}
+        aria-label={t('restoreDefaultAria', { label })}
         className={`w-5 h-5 rounded flex items-center justify-center transition-opacity ${
           changed ? 'text-white/35 hover:text-white/80 hover:bg-white/5' : 'opacity-0 pointer-events-none'
         }`}
@@ -186,6 +384,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function StyleStudio({ onClose, isMobile }: { onClose: () => void; isMobile?: boolean }) {
+  const t = useT(MESSAGES);
   const [s, setS] = useState<StyleSettings | null>(null);
   const [copied, setCopied] = useState(false);
   const initialised = useRef(false);
@@ -294,26 +493,26 @@ function StyleStudio({ onClose, isMobile }: { onClose: () => void; isMobile?: bo
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/[0.07] shrink-0">
         <div className="flex flex-col">
           <span className="text-[11px] font-mono tracking-[0.22em] uppercase text-[var(--gold-light)]">Style Studio</span>
-          <span className="text-[9px] font-mono tracking-[0.1em] uppercase text-white/25">Live UI tokens</span>
+          <span className="text-[9px] font-mono tracking-[0.1em] uppercase text-white/25">{t('liveTokens')}</span>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={paste} title="Paste a shared theme from the clipboard" aria-label="Paste theme" className="w-7 h-7 rounded-md flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/5 transition-colors">
+          <button onClick={paste} title={t('pasteTitle')} aria-label={t('pasteAria')} className="w-7 h-7 rounded-md flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/5 transition-colors">
             <ClipboardPaste className="w-3.5 h-3.5" />
           </button>
-          <button onClick={copy} title="Copy this theme as JSON" aria-label="Copy theme" className="w-7 h-7 rounded-md flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/5 transition-colors">
+          <button onClick={copy} title={t('copyTitle')} aria-label={t('copyAria')} className="w-7 h-7 rounded-md flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/5 transition-colors">
             {copied ? <Check className="w-3.5 h-3.5 text-[var(--alert-green)]" /> : <Copy className="w-3.5 h-3.5" />}
           </button>
-          <button onClick={reset} title="Reset to the active theme" aria-label="Reset" className="w-7 h-7 rounded-md flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/5 transition-colors">
+          <button onClick={reset} title={t('resetTitle')} aria-label={t('reset')} className="w-7 h-7 rounded-md flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/5 transition-colors">
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
-          <button onClick={onClose} title="Close" aria-label="Close Style Studio" className="w-7 h-7 rounded-md flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/5 transition-colors">
+          <button onClick={onClose} title={t('close')} aria-label={t('closeStudio')} className="w-7 h-7 rounded-md flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/5 transition-colors">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-3">
-        <Section title="Preset">
+        <Section title={t('secPreset')}>
           <div className="grid grid-cols-3 gap-1 pt-1">
             {PRESETS.map(p => (
               <button
@@ -328,23 +527,23 @@ function StyleStudio({ onClose, isMobile }: { onClose: () => void; isMobile?: bo
           </div>
         </Section>
 
-        <Section title="Accent">
-          <Row label="Primary"><Swatch label="Primary accent" value={s.accent} onChange={v => set('accent', v)} /></Row>
-          <Row label="Secondary"><Swatch label="Secondary accent" value={s.accent2} onChange={v => set('accent2', v)} /></Row>
-          <Row label="Glow"><Slider label="Glow strength" value={s.glow} min={0} max={1} step={0.01} onChange={v => set('glow', v)} format={v => `${Math.round(v * 100)}%`} /></Row>
+        <Section title={t('secAccent')}>
+          <Row label={t('primary')}><Swatch label={t('primaryAccent')} value={s.accent} onChange={v => set('accent', v)} /></Row>
+          <Row label={t('secondary')}><Swatch label={t('secondaryAccent')} value={s.accent2} onChange={v => set('accent2', v)} /></Row>
+          <Row label={t('glow')}><Slider label={t('glowStrength')} value={s.glow} min={0} max={1} step={0.01} onChange={v => set('glow', v)} format={v => `${Math.round(v * 100)}%`} /></Row>
         </Section>
 
-        <Section title="Signal">
-          <Row label="Critical"><Swatch label="Critical colour" value={s.alertRed} onChange={v => set('alertRed', v)} /></Row>
-          <Row label="Warning"><Swatch label="Warning colour" value={s.alertOrange} onChange={v => set('alertOrange', v)} /></Row>
-          <Row label="Nominal"><Swatch label="Nominal colour" value={s.alertGreen} onChange={v => set('alertGreen', v)} /></Row>
-          <Row label="Info"><Swatch label="Info colour" value={s.alertBlue} onChange={v => set('alertBlue', v)} /></Row>
+        <Section title={t('secSignal')}>
+          <Row label={t('critical')}><Swatch label={t('criticalColour')} value={s.alertRed} onChange={v => set('alertRed', v)} /></Row>
+          <Row label={t('warning')}><Swatch label={t('warningColour')} value={s.alertOrange} onChange={v => set('alertOrange', v)} /></Row>
+          <Row label={t('nominal')}><Swatch label={t('nominalColour')} value={s.alertGreen} onChange={v => set('alertGreen', v)} /></Row>
+          <Row label={t('info')}><Swatch label={t('infoColour')} value={s.alertBlue} onChange={v => set('alertBlue', v)} /></Row>
         </Section>
 
-        <Section title="Map controls">
-          <Row label="Pan/zoom pad">
+        <Section title={t('secMapControls')}>
+          <Row label={t('panZoomPad')}>
             <Segmented
-              label="On-screen pan and zoom pad"
+              label={t('panZoomPadAria')}
               options={ON_OFF}
               value={s.mapControls ? 'on' : 'off'}
               onChange={v => set('mapControls', v === 'on')}
@@ -352,57 +551,56 @@ function StyleStudio({ onClose, isMobile }: { onClose: () => void; isMobile?: bo
           </Row>
         </Section>
 
-        <Section title="Map layers">
-          <SubHead label="Cameras" />
-          <Row label="Dots &amp; labels"><ResettableSwatch label="Camera colour" value={s.map.cctv} fallback={MAP_DEFAULTS.cctv} onChange={v => setMap('cctv', v)} /></Row>
+        <Section title={t('secMapLayers')}>
+          <SubHead label={t('cameras')} />
+          <Row label={t('dotsLabels')}><ResettableSwatch label={t('cameraColour')} value={s.map.cctv} fallback={MAP_DEFAULTS.cctv} onChange={v => setMap('cctv', v)} /></Row>
 
-          <SubHead label="Satellites" note="Default keeps each satellite's own mission colour. Change one and it takes over that whole category." />
-          <Row label="Comms"><ResettableSwatch label="Comms satellites" value={s.map.satComms} fallback={MAP_DEFAULTS.satComms} onChange={v => setMap('satComms', v)} /></Row>
-          <Row label="Military"><ResettableSwatch label="Military satellites" value={s.map.satMilitary} fallback={MAP_DEFAULTS.satMilitary} onChange={v => setMap('satMilitary', v)} /></Row>
-          <Row label="Navigation"><ResettableSwatch label="Navigation satellites" value={s.map.satNavigation} fallback={MAP_DEFAULTS.satNavigation} onChange={v => setMap('satNavigation', v)} /></Row>
-          <Row label="Earth obs"><ResettableSwatch label="Earth observation satellites" value={s.map.satEarth} fallback={MAP_DEFAULTS.satEarth} onChange={v => setMap('satEarth', v)} /></Row>
-          <Row label="Science"><ResettableSwatch label="Science satellites" value={s.map.satScience} fallback={MAP_DEFAULTS.satScience} onChange={v => setMap('satScience', v)} /></Row>
-          <Row label="Other"><ResettableSwatch label="Other satellites" value={s.map.satOther} fallback={MAP_DEFAULTS.satOther} onChange={v => setMap('satOther', v)} /></Row>
+          <SubHead label={t('satellites')} note={t('satellitesNote')} />
+          <Row label={t('comms')}><ResettableSwatch label={t('commsSats')} value={s.map.satComms} fallback={MAP_DEFAULTS.satComms} onChange={v => setMap('satComms', v)} /></Row>
+          <Row label={t('military')}><ResettableSwatch label={t('militarySats')} value={s.map.satMilitary} fallback={MAP_DEFAULTS.satMilitary} onChange={v => setMap('satMilitary', v)} /></Row>
+          <Row label={t('navigation')}><ResettableSwatch label={t('navigationSats')} value={s.map.satNavigation} fallback={MAP_DEFAULTS.satNavigation} onChange={v => setMap('satNavigation', v)} /></Row>
+          <Row label={t('earthObs')}><ResettableSwatch label={t('earthSats')} value={s.map.satEarth} fallback={MAP_DEFAULTS.satEarth} onChange={v => setMap('satEarth', v)} /></Row>
+          <Row label={t('science')}><ResettableSwatch label={t('scienceSats')} value={s.map.satScience} fallback={MAP_DEFAULTS.satScience} onChange={v => setMap('satScience', v)} /></Row>
+          <Row label={t('other')}><ResettableSwatch label={t('otherSats')} value={s.map.satOther} fallback={MAP_DEFAULTS.satOther} onChange={v => setMap('satOther', v)} /></Row>
 
-          <SubHead label="Aircraft" />
-          <Row label="Civil"><ResettableSwatch label="Civil aircraft" value={s.map.flightCivil} fallback={MAP_DEFAULTS.flightCivil} onChange={v => setMap('flightCivil', v)} /></Row>
-          <Row label="Private"><ResettableSwatch label="Private aircraft" value={s.map.flightPrivate} fallback={MAP_DEFAULTS.flightPrivate} onChange={v => setMap('flightPrivate', v)} /></Row>
-          <Row label="Government"><ResettableSwatch label="Government aircraft" value={s.map.flightGov} fallback={MAP_DEFAULTS.flightGov} onChange={v => setMap('flightGov', v)} /></Row>
-          <Row label="Military"><ResettableSwatch label="Military aircraft" value={s.map.flightMilitary} fallback={MAP_DEFAULTS.flightMilitary} onChange={v => setMap('flightMilitary', v)} /></Row>
-          <Row label="Unknown"><ResettableSwatch label="Unknown aircraft" value={s.map.flightUnknown} fallback={MAP_DEFAULTS.flightUnknown} onChange={v => setMap('flightUnknown', v)} /></Row>
+          <SubHead label={t('aircraft')} />
+          <Row label={t('civil')}><ResettableSwatch label={t('civilAircraft')} value={s.map.flightCivil} fallback={MAP_DEFAULTS.flightCivil} onChange={v => setMap('flightCivil', v)} /></Row>
+          <Row label={t('private')}><ResettableSwatch label={t('privateAircraft')} value={s.map.flightPrivate} fallback={MAP_DEFAULTS.flightPrivate} onChange={v => setMap('flightPrivate', v)} /></Row>
+          <Row label={t('government')}><ResettableSwatch label={t('govAircraft')} value={s.map.flightGov} fallback={MAP_DEFAULTS.flightGov} onChange={v => setMap('flightGov', v)} /></Row>
+          <Row label={t('military')}><ResettableSwatch label={t('militaryAircraft')} value={s.map.flightMilitary} fallback={MAP_DEFAULTS.flightMilitary} onChange={v => setMap('flightMilitary', v)} /></Row>
+          <Row label={t('unknown')}><ResettableSwatch label={t('unknownAircraft')} value={s.map.flightUnknown} fallback={MAP_DEFAULTS.flightUnknown} onChange={v => setMap('flightUnknown', v)} /></Row>
         </Section>
 
-        <Section title="Surface">
-          <Row label="Background"><Swatch label="Background colour" value={s.bg} onChange={setBg} /></Row>
-          <Row label="Panel"><Slider label="Panel opacity" value={s.panelAlpha} min={0.2} max={1} step={0.01} onChange={v => set('panelAlpha', v)} format={v => `${Math.round(v * 100)}%`} /></Row>
-          <Row label="Border"><Slider label="Border strength" value={s.borderAlpha} min={0} max={0.6} step={0.01} onChange={v => set('borderAlpha', v)} format={v => `${Math.round(v * 100)}%`} /></Row>
-          <Row label="Blur"><AutoSlider label="Backdrop blur" value={s.blur} min={0} max={64} step={1} whenEnabled={24} onChange={v => set('blur', v)} format={v => `${v}px`} /></Row>
-          <Row label="Radius"><Slider label="Corner radius" value={s.radius} min={0} max={2.5} step={0.05} onChange={v => set('radius', v)} format={v => `${v.toFixed(2)}x`} /></Row>
+        <Section title={t('secSurface')}>
+          <Row label={t('background')}><Swatch label={t('backgroundColour')} value={s.bg} onChange={setBg} /></Row>
+          <Row label={t('panel')}><Slider label={t('panelOpacity')} value={s.panelAlpha} min={0.2} max={1} step={0.01} onChange={v => set('panelAlpha', v)} format={v => `${Math.round(v * 100)}%`} /></Row>
+          <Row label={t('border')}><Slider label={t('borderStrength')} value={s.borderAlpha} min={0} max={0.6} step={0.01} onChange={v => set('borderAlpha', v)} format={v => `${Math.round(v * 100)}%`} /></Row>
+          <Row label={t('blur')}><AutoSlider label={t('backdropBlur')} value={s.blur} min={0} max={64} step={1} whenEnabled={24} onChange={v => set('blur', v)} format={v => `${v}px`} /></Row>
+          <Row label={t('radius')}><Slider label={t('cornerRadius')} value={s.radius} min={0} max={2.5} step={0.05} onChange={v => set('radius', v)} format={v => `${v.toFixed(2)}x`} /></Row>
         </Section>
 
-        <Section title="Text">
-          <Row label="Primary"><Swatch label="Primary text" value={s.textPrimary} onChange={v => set('textPrimary', v)} /></Row>
-          <Row label="Secondary"><Swatch label="Secondary text" value={s.textSecondary} onChange={v => set('textSecondary', v)} /></Row>
-          <Row label="Muted"><Swatch label="Muted text" value={s.textMuted} onChange={v => set('textMuted', v)} /></Row>
-          <Row label="Heading"><Swatch label="Heading text" value={s.textHeading} onChange={v => set('textHeading', v)} /></Row>
+        <Section title={t('secText')}>
+          <Row label={t('primary')}><Swatch label={t('primaryText')} value={s.textPrimary} onChange={v => set('textPrimary', v)} /></Row>
+          <Row label={t('secondary')}><Swatch label={t('secondaryText')} value={s.textSecondary} onChange={v => set('textSecondary', v)} /></Row>
+          <Row label={t('muted')}><Swatch label={t('mutedText')} value={s.textMuted} onChange={v => set('textMuted', v)} /></Row>
+          <Row label={t('heading')}><Swatch label={t('headingText')} value={s.textHeading} onChange={v => set('textHeading', v)} /></Row>
         </Section>
 
-        <Section title="Typography">
-          <Row label="UI font"><Segmented label="UI font" options={FONT_UI} value={s.fontUi} onChange={v => set('fontUi', v)} /></Row>
-          <Row label="Mono font"><Segmented label="Mono font" options={FONT_MONO} value={s.fontMono} onChange={v => set('fontMono', v)} /></Row>
-          <Row label="Tracking"><AutoSlider label="Mono tracking" value={s.tracking} min={-0.05} max={0.4} step={0.005} whenEnabled={0.2} onChange={v => set('tracking', v)} format={v => `${v.toFixed(2)}em`} /></Row>
+        <Section title={t('secTypography')}>
+          <Row label={t('uiFont')}><Segmented label={t('uiFont')} options={FONT_UI} value={s.fontUi} onChange={v => set('fontUi', v)} /></Row>
+          <Row label={t('monoFont')}><Segmented label={t('monoFont')} options={FONT_MONO} value={s.fontMono} onChange={v => set('fontMono', v)} /></Row>
+          <Row label={t('tracking')}><AutoSlider label={t('monoTracking')} value={s.tracking} min={-0.05} max={0.4} step={0.005} whenEnabled={0.2} onChange={v => set('tracking', v)} format={v => `${v.toFixed(2)}em`} /></Row>
         </Section>
 
-        <Section title="Motion & FX">
-          <Row label="Speed"><Slider label="Motion speed" value={s.motion} min={0} max={2} step={0.05} onChange={v => set('motion', v)} format={v => (v === 0 ? 'off' : `${v.toFixed(2)}x`)} /></Row>
-          <Row label="Scanlines"><Slider label="Scanline overlay" value={s.scanlines} min={0} max={0.2} step={0.005} onChange={v => set('scanlines', v)} format={v => (v === 0 ? 'off' : `${Math.round(v * 500)}%`)} /></Row>
-          <Row label="Grain"><Slider label="Film grain overlay" value={s.grain} min={0} max={0.3} step={0.005} onChange={v => set('grain', v)} format={v => (v === 0 ? 'off' : `${Math.round(v * 333)}%`)} /></Row>
-          <Row label="Vignette"><Slider label="Edge vignette" value={s.vignette} min={0} max={1} step={0.01} onChange={v => set('vignette', v)} format={v => (v === 0 ? 'off' : `${Math.round(v * 100)}%`)} /></Row>
+        <Section title={t('secMotion')}>
+          <Row label={t('speed')}><Slider label={t('motionSpeed')} value={s.motion} min={0} max={2} step={0.05} onChange={v => set('motion', v)} format={v => (v === 0 ? 'off' : `${v.toFixed(2)}x`)} /></Row>
+          <Row label={t('scanlines')}><Slider label={t('scanlineOverlay')} value={s.scanlines} min={0} max={0.2} step={0.005} onChange={v => set('scanlines', v)} format={v => (v === 0 ? 'off' : `${Math.round(v * 500)}%`)} /></Row>
+          <Row label={t('grain')}><Slider label={t('grainOverlay')} value={s.grain} min={0} max={0.3} step={0.005} onChange={v => set('grain', v)} format={v => (v === 0 ? 'off' : `${Math.round(v * 333)}%`)} /></Row>
+          <Row label={t('vignette')}><Slider label={t('edgeVignette')} value={s.vignette} min={0} max={1} step={0.01} onChange={v => set('vignette', v)} format={v => (v === 0 ? 'off' : `${Math.round(v * 100)}%`)} /></Row>
         </Section>
 
         <p className="text-[9px] font-mono leading-relaxed text-white/20 pt-1 pb-1">
-          Saved to this browser. AUTO leaves the app&apos;s own styling alone, and presets do not touch the map
-          layers &mdash; those carry meaning, not just a look. Reset restores the active theme.
+          {t('footer')}
         </p>
       </div>
     </motion.div>,

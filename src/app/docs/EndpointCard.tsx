@@ -1,8 +1,48 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { endpointId, type ApiEndpoint } from './apiCatalog';
+import { endpointId, endpointNotes, endpointSummary, paramDesc, type ApiEndpoint } from './apiCatalog';
 import { CodeBlock, CopyButton, type CodeTab } from './docsPrimitives';
+import { defineMessages, useLang, useT } from '@/lib/i18n';
+
+const MESSAGES = defineMessages({
+  en: {
+    queryParams: 'Query parameters',
+    required: 'required',
+    optional: 'optional',
+    paramValue: '{name} value',
+    requestBody: 'Request body',
+    request: 'Request',
+    running: 'Running',
+    sendRequest: 'Send request',
+    fillFirst: 'Fill {names} first',
+    requiresCredential: 'Requires a credential — run this from your own client.',
+    postEndpoint: 'POST endpoint — run this from your own client.',
+    response: 'Response',
+    responseKeys: 'Response keys',
+    environment: 'Environment',
+    truncated: '… truncated',
+    requestFailed: 'Request failed: {error}',
+  },
+  it: {
+    queryParams: 'Parametri query string',
+    required: 'obbligatorio',
+    optional: 'facoltativo',
+    paramValue: 'Valore di {name}',
+    requestBody: 'Body della richiesta',
+    request: 'Richiesta',
+    running: 'In corso',
+    sendRequest: 'Invia richiesta',
+    fillFirst: 'Compila prima {names}',
+    requiresCredential: 'Richiede una credenziale: eseguilo dal tuo client.',
+    postEndpoint: 'Endpoint POST: eseguilo dal tuo client.',
+    response: 'Risposta',
+    responseKeys: 'Chiavi della risposta',
+    environment: 'Variabili d’ambiente',
+    truncated: '… troncato',
+    requestFailed: 'Richiesta fallita: {error}',
+  },
+});
 
 const METHOD_STYLES: Record<string, string> = {
   GET: 'text-[#00E676] border-[#00E676]/30 bg-[#00E676]/10',
@@ -62,6 +102,9 @@ export default function EndpointCard({ ep, origin }: { ep: ApiEndpoint; origin: 
   const methods = Array.isArray(ep.method) ? ep.method : [ep.method];
   const primary = methods[0];
   const id = endpointId(ep);
+  const t = useT(MESSAGES);
+  const { lang } = useLang();
+  const notes = endpointNotes(ep, lang);
 
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState<Record<string, string>>(() =>
@@ -99,14 +142,14 @@ export default function EndpointCard({ ep, origin }: { ep: ApiEndpoint; origin: 
       } catch {
         /* not JSON — show the raw body */
       }
-      const truncated = pretty.length > 4000 ? `${pretty.slice(0, 4000)}\n\n… truncated` : pretty;
+      const truncated = pretty.length > 4000 ? `${pretty.slice(0, 4000)}\n\n${t('truncated')}` : pretty;
       setResult({ status: res.status, ms, body: truncated, ok: res.ok });
     } catch (e) {
       setResult({
         status: 0,
         ms: Math.round(performance.now() - started),
         ok: false,
-        body: `Request failed: ${e instanceof Error ? e.message : String(e)}`,
+        body: t('requestFailed', { error: e instanceof Error ? e.message : String(e) }),
       });
     } finally {
       setRunning(false);
@@ -141,7 +184,7 @@ export default function EndpointCard({ ep, origin }: { ep: ApiEndpoint; origin: 
           <div className="font-mono text-[12.5px] text-[var(--text-primary)] font-medium break-all mb-1">
             {ep.path}
           </div>
-          <p className="text-[12.5px] leading-relaxed text-[var(--text-secondary)]">{ep.summary}</p>
+          <p className="text-[12.5px] leading-relaxed text-[var(--text-secondary)]">{endpointSummary(ep, lang)}</p>
         </div>
 
         <svg
@@ -166,7 +209,7 @@ export default function EndpointCard({ ep, origin }: { ep: ApiEndpoint; origin: 
           {ep.params && ep.params.length > 0 && (
             <div className="mb-4">
               <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-[var(--text-muted)] mb-2">
-                Query parameters
+                {t('queryParams')}
               </div>
               <div className="space-y-2">
                 {ep.params.map(p => (
@@ -175,11 +218,11 @@ export default function EndpointCard({ ep, origin }: { ep: ApiEndpoint; origin: 
                       <span className="font-mono text-[11.5px] text-[var(--gold-primary)]">{p.name}</span>
                       {p.required ? (
                         <span className="text-[9px] font-mono tracking-wider uppercase text-[var(--alert-red)]/80">
-                          required
+                          {t('required')}
                         </span>
                       ) : (
                         <span className="text-[9px] font-mono tracking-wider uppercase text-[var(--text-muted)]">
-                          optional
+                          {t('optional')}
                         </span>
                       )}
                     </div>
@@ -188,10 +231,10 @@ export default function EndpointCard({ ep, origin }: { ep: ApiEndpoint; origin: 
                         value={values[p.name] ?? ''}
                         onChange={e => setValues(v => ({ ...v, [p.name]: e.target.value }))}
                         placeholder={p.example || p.name}
-                        aria-label={`${p.name} value`}
+                        aria-label={t('paramValue', { name: p.name })}
                         className="w-full px-2.5 py-1.5 rounded-md text-[11.5px] font-mono bg-black/40 border border-white/[0.08] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/60 focus:outline-none focus:border-[var(--gold-primary)]/40"
                       />
-                      <p className="text-[11.5px] leading-relaxed text-[var(--text-secondary)] mt-1">{p.desc}</p>
+                      <p className="text-[11.5px] leading-relaxed text-[var(--text-secondary)] mt-1">{paramDesc(p, lang)}</p>
                     </div>
                   </div>
                 ))}
@@ -203,7 +246,7 @@ export default function EndpointCard({ ep, origin }: { ep: ApiEndpoint; origin: 
           {ep.bodyExample && (
             <>
               <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-[var(--text-muted)] mb-1">
-                Request body
+                {t('requestBody')}
               </div>
               <CodeBlock dense tabs={[{ label: 'JSON', lang: 'json', code: ep.bodyExample }]} />
             </>
@@ -211,7 +254,7 @@ export default function EndpointCard({ ep, origin }: { ep: ApiEndpoint; origin: 
 
           {/* Request snippets */}
           <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-[var(--text-muted)] mb-1 mt-4">
-            Request
+            {t('request')}
           </div>
           <CodeBlock dense tabs={tabs} />
 
@@ -231,11 +274,11 @@ export default function EndpointCard({ ep, origin }: { ep: ApiEndpoint; origin: 
                       <path d="M8 5v14l11-7z" />
                     </svg>
                   )}
-                  {running ? 'Running' : 'Send request'}
+                  {running ? t('running') : t('sendRequest')}
                 </button>
                 {missingRequired.length > 0 && (
                   <span className="text-[11px] font-mono text-[var(--text-muted)]">
-                    Fill {missingRequired.map(p => p.name).join(', ')} first
+                    {t('fillFirst', { names: missingRequired.map(p => p.name).join(', ') })}
                   </span>
                 )}
                 <CopyButton value={`${origin}${liveUrl}`} />
@@ -243,8 +286,8 @@ export default function EndpointCard({ ep, origin }: { ep: ApiEndpoint; origin: 
             ) : (
               <span className="text-[11px] font-mono text-[var(--text-muted)]">
                 {ep.requiresAuth
-                  ? 'Requires a credential — run this from your own client.'
-                  : 'POST endpoint — run this from your own client.'}
+                  ? t('requiresCredential')
+                  : t('postEndpoint')}
               </span>
             )}
           </div>
@@ -254,7 +297,7 @@ export default function EndpointCard({ ep, origin }: { ep: ApiEndpoint; origin: 
             <div className="mt-3">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-[var(--text-muted)]">
-                  Response
+                  {t('response')}
                 </span>
                 <span
                   className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${
@@ -274,7 +317,7 @@ export default function EndpointCard({ ep, origin }: { ep: ApiEndpoint; origin: 
           {/* Returns */}
           <div className="mt-4">
             <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-[var(--text-muted)] mb-1.5">
-              Response keys
+              {t('responseKeys')}
             </div>
             <div className="flex flex-wrap gap-1.5">
               {ep.returns.map(r => (
@@ -292,7 +335,7 @@ export default function EndpointCard({ ep, origin }: { ep: ApiEndpoint; origin: 
           {ep.env && ep.env.length > 0 && (
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-[var(--text-muted)]">
-                Environment
+                {t('environment')}
               </span>
               {ep.env.map(e => (
                 <span
@@ -306,9 +349,9 @@ export default function EndpointCard({ ep, origin }: { ep: ApiEndpoint; origin: 
           )}
 
           {/* Notes */}
-          {ep.notes && (
+          {notes && (
             <p className="mt-4 text-[11px] leading-[1.75] text-[var(--text-muted)] border-l-2 border-[var(--gold-primary)]/25 pl-3">
-              {ep.notes}
+              {notes}
             </p>
           )}
         </div>

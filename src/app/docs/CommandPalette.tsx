@@ -1,7 +1,29 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { API_GROUPS, endpointId } from './apiCatalog';
+import { API_GROUPS, endpointId, endpointSummary, groupTitle } from './apiCatalog';
+import { defineMessages, translate, useT, type Lang } from '@/lib/i18n';
+
+const MESSAGES = defineMessages({
+  en: {
+    guideSection: 'Guide section',
+    searchDocs: 'Search documentation',
+    placeholder: 'Search sections and endpoints…',
+    noMatches: 'No matches for “{query}”',
+    navigate: 'navigate',
+    jump: 'jump',
+    results: '{n} results',
+  },
+  it: {
+    guideSection: 'Sezione della guida',
+    searchDocs: 'Cerca nella documentazione',
+    placeholder: 'Cerca sezioni ed endpoint…',
+    noMatches: 'Nessun risultato per “{query}”',
+    navigate: 'naviga',
+    jump: 'vai',
+    results: '{n} risultati',
+  },
+});
 
 export interface PaletteItem {
   id: string;
@@ -11,11 +33,11 @@ export interface PaletteItem {
   group?: string;
 }
 
-export function buildPaletteItems(guideSections: { id: string; title: string }[]): PaletteItem[] {
+export function buildPaletteItems(guideSections: { id: string; title: string }[], lang: Lang): PaletteItem[] {
   const guide: PaletteItem[] = guideSections.map(s => ({
     id: s.id,
     label: s.title,
-    hint: 'Guide section',
+    hint: translate(MESSAGES, lang, 'guideSection'),
     kind: 'Guide',
   }));
 
@@ -23,9 +45,9 @@ export function buildPaletteItems(guideSections: { id: string; title: string }[]
     g.endpoints.map(ep => ({
       id: endpointId(ep),
       label: ep.path,
-      hint: ep.summary,
+      hint: endpointSummary(ep, lang),
       kind: 'Endpoint' as const,
-      group: g.title,
+      group: groupTitle(g, lang),
     }))
   );
 
@@ -41,6 +63,7 @@ export default function CommandPalette({
   onClose: () => void;
   items: PaletteItem[];
 }) {
+  const t = useT(MESSAGES);
   const [query, setQuery] = useState('');
   const [cursor, setCursor] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -114,7 +137,7 @@ export default function CommandPalette({
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="Search documentation"
+      aria-label={t('searchDocs')}
     >
       <div
         onClick={e => e.stopPropagation()}
@@ -130,8 +153,8 @@ export default function CommandPalette({
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Search sections and endpoints…"
-            aria-label="Search documentation"
+            placeholder={t('placeholder')}
+            aria-label={t('searchDocs')}
             className="flex-1 bg-transparent text-[12px] font-mono text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none"
           />
           <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-white/10 text-[var(--text-muted)]">
@@ -142,7 +165,7 @@ export default function CommandPalette({
         <div ref={listRef} className="max-h-[52vh] overflow-y-auto styled-scrollbar py-1.5">
           {results.length === 0 && (
             <div className="px-4 py-8 text-center text-[11px] font-mono text-[var(--text-muted)]">
-              No matches for “{query}”
+              {t('noMatches', { query })}
             </div>
           )}
           {results.map((it, i) => (
@@ -180,12 +203,12 @@ export default function CommandPalette({
         <div className="flex items-center gap-4 px-4 h-9 border-t border-white/[0.07] text-[10px] font-mono text-[var(--text-muted)]">
           <span className="flex items-center gap-1">
             <kbd className="px-1 py-0.5 rounded border border-white/10">↑</kbd>
-            <kbd className="px-1 py-0.5 rounded border border-white/10">↓</kbd> navigate
+            <kbd className="px-1 py-0.5 rounded border border-white/10">↓</kbd> {t('navigate')}
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 rounded border border-white/10">↵</kbd> jump
+            <kbd className="px-1 py-0.5 rounded border border-white/10">↵</kbd> {t('jump')}
           </span>
-          <span className="ml-auto">{results.length} results</span>
+          <span className="ml-auto">{t('results', { n: results.length })}</span>
         </div>
       </div>
     </div>

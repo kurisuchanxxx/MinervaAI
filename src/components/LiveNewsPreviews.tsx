@@ -3,6 +3,12 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { layoutTile, tileHeight, tilesOverlap, type TileGeometry } from '@/lib/map-tile-layout';
 import type { Map as MlMap } from 'maplibre-gl';
+import { defineMessages, useT } from '@/lib/i18n';
+
+const MESSAGES = defineMessages({
+  en: { open: 'Open', openName: 'Open {name}' },
+  it: { open: 'Apri', openName: 'Apri {name}' },
+});
 
 /**
  * MinervaAI — live TV news playing on the map.
@@ -152,6 +158,7 @@ function Tile({ feed, onOpen, onFail }: {
   onOpen: (feed: PreviewFeed) => void;
   onFail: (id: string) => void;
 }) {
+  const t = useT(MESSAGES);
   const fail = useCallback(() => onFail(feed.id), [onFail, feed.id]);
   const { ref, handshake } = useYouTubeError(feed.id, fail);
 
@@ -176,12 +183,12 @@ function Tile({ feed, onOpen, onFail }: {
             needs its own target rather than a wrapping button. */}
         <button
           onClick={() => onOpen(feed)}
-          title={`Open ${feed.name}`}
-          aria-label={`Open ${feed.name}`}
+          title={t('openName', { name: feed.name })}
+          aria-label={t('openName', { name: feed.name })}
           className="absolute right-1 top-1 z-10 px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.12em]"
           style={{ background: 'rgba(0,0,0,0.75)', border: `1px solid ${news(50)}`, color: NEWS }}
         >
-          Open
+          {t('open')}
         </button>
       </div>
 

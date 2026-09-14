@@ -16,7 +16,7 @@
       "purpose": "any"
     },
     {
-      "src": "/osiris-icon.png",
+      "src": "/minerva-icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

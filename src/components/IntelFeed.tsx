@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Newspaper, ChevronDown, ChevronUp, ExternalLink, MapPin, Zap } from 'lucide-react';
+import { defineMessages, useT } from '@/lib/i18n';
 
 /* ═══════════════════════════════════════════════════════════════
    MinervaAI — Intelligence Feed
@@ -14,6 +15,35 @@ interface IntelFeedProps {
   onLocate?: (lat: number, lng: number) => void;
 }
 
+const MESSAGES = defineMessages({
+  en: {
+    critical: 'CRITICAL',
+    high: 'HIGH',
+    elevated: 'ELEVATED',
+    low: 'LOW',
+    minsAgo: '{n}m ago',
+    hoursAgo: '{n}h ago',
+    daysAgo: '{n}d ago',
+    alerts: 'ALERTS',
+    awaiting: 'AWAITING INTELLIGENCE...',
+    openSource: 'OPEN SOURCE',
+  },
+  it: {
+    critical: 'CRITICO',
+    high: 'ALTO',
+    elevated: 'ELEVATO',
+    low: 'BASSO',
+    minsAgo: '{n}m fa',
+    hoursAgo: '{n}h fa',
+    daysAgo: '{n}g fa',
+    alerts: 'ALLERTE',
+    awaiting: 'IN ATTESA DI INTELLIGENCE...',
+    openSource: 'APRI FONTE',
+  },
+});
+
+type T = (key: keyof typeof MESSAGES.en, vars?: Record<string, string | number>) => string;
+
 function getRiskClass(score: number): string {
   if (score >= 8) return 'risk-critical';
   if (score >= 6) return 'risk-high';
@@ -21,28 +51,29 @@ function getRiskClass(score: number): string {
   return 'risk-low';
 }
 
-function getRiskLabel(score: number): string {
-  if (score >= 8) return 'CRITICAL';
-  if (score >= 6) return 'HIGH';
-  if (score >= 4) return 'ELEVATED';
-  return 'LOW';
+function getRiskLabel(score: number, t: T): string {
+  if (score >= 8) return t('critical');
+  if (score >= 6) return t('high');
+  if (score >= 4) return t('elevated');
+  return t('low');
 }
 
-function timeAgo(dateStr: string): string {
+function timeAgo(dateStr: string, t: T): string {
   try {
     const date = new Date(dateStr);
     const diff = Date.now() - date.getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 60) return `${mins}m ago`;
+    if (mins < 60) return t('minsAgo', { n: mins });
     const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    return `${Math.floor(hrs / 24)}d ago`;
+    if (hrs < 24) return t('hoursAgo', { n: hrs });
+    return t('daysAgo', { n: Math.floor(hrs / 24) });
   } catch {
     return '';
   }
 }
 
 export default function IntelFeed({ data, onLocate }: IntelFeedProps) {
+  const t = useT(MESSAGES);
   const [expanded, setExpanded] = useState(true);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const news = data.news || [];
@@ -64,7 +95,7 @@ export default function IntelFeed({ data, onLocate }: IntelFeedProps) {
           <span className="hud-text text-[11px] text-[var(--text-primary)]">SIGINT FEED</span>
           <span className="gotham-tag gotham-tag--info" style={{ fontSize: '9px', padding: '1px 5px' }}>{news.length}</span>
           {news.some((n: any) => n.risk_score >= 8) && (
-            <span className="gotham-tag gotham-tag--critical" style={{ fontSize: '9px', padding: '1px 4px' }}>ALERTS</span>
+            <span className="gotham-tag gotham-tag--critical" style={{ fontSize: '9px', padding: '1px 4px' }}>{t('alerts')}</span>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -86,7 +117,7 @@ export default function IntelFeed({ data, onLocate }: IntelFeedProps) {
               {news.length === 0 ? (
                 <div className="px-4 py-6 text-center">
                   <span className="text-[10px] font-mono text-[var(--text-muted)] tracking-widest">
-                    AWAITING INTELLIGENCE...
+                    {t('awaiting')}
                   </span>
                 </div>
               ) : (
@@ -102,7 +133,7 @@ export default function IntelFeed({ data, onLocate }: IntelFeedProps) {
                     {/* Top row: risk badge + source + time */}
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`text-[10px] font-mono font-bold tracking-widest ${getRiskClass(item.risk_score)}`}>
-                        {getRiskLabel(item.risk_score)}
+                        {getRiskLabel(item.risk_score, t)}
                       </span>
                       <span className="text-[9px] font-mono text-[var(--text-muted)] bg-[var(--bg-tertiary)] px-1.5 py-0.5 rounded">
                         {item.source}
@@ -119,7 +150,7 @@ export default function IntelFeed({ data, onLocate }: IntelFeedProps) {
                         </button>
                       )}
                       <span className="text-[9px] font-mono text-[var(--text-muted)] ml-auto">
-                        {timeAgo(item.published)}
+                        {timeAgo(item.published, t)}
                       </span>
                     </div>
 
@@ -155,7 +186,7 @@ export default function IntelFeed({ data, onLocate }: IntelFeedProps) {
                             onClick={(e) => e.stopPropagation()}
                           >
                             <ExternalLink className="w-2.5 h-2.5" />
-                            OPEN SOURCE
+                            {t('openSource')}
                           </a>
                         </motion.div>
                       )}

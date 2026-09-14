@@ -3,6 +3,32 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Loader2, RefreshCw, X } from 'lucide-react';
+import { defineMessages, useT, useLang, localeOf } from '@/lib/i18n';
+
+const MESSAGES = defineMessages({
+  en: {
+    failed: 'Failed to generate overview',
+    analyzing: 'ANALYZING…',
+    aiOverview: 'AI OVERVIEW',
+    byAi: 'MinervaAI AI',
+    byAnalyst: 'MinervaAI ANALYST',
+    regenerate: 'Regenerate',
+    close: 'Close',
+    reading: 'Reading the feed…',
+    heuristicAnalyst: 'HEURISTIC ANALYST',
+  },
+  it: {
+    failed: 'Generazione della sintesi non riuscita',
+    analyzing: 'ANALISI…',
+    aiOverview: 'SINTESI AI',
+    byAi: 'MinervaAI AI',
+    byAnalyst: 'MinervaAI ANALISTA',
+    regenerate: 'Rigenera',
+    close: 'Chiudi',
+    reading: 'Lettura del feed…',
+    heuristicAnalyst: 'ANALISTA EURISTICO',
+  },
+});
 
 /**
  * MinervaAI — One-Click AI Overview
@@ -30,6 +56,8 @@ export default function AiOverview({ mode, payload, accent = '#7C4DFF' }: AiOver
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<OverviewResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const t = useT(MESSAGES);
+  const { lang } = useLang();
 
   const generate = useCallback(async () => {
     setLoading(true);
@@ -43,11 +71,11 @@ export default function AiOverview({ mode, payload, accent = '#7C4DFF' }: AiOver
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setResult(await res.json());
     } catch (e: any) {
-      setError(e?.message || 'Failed to generate overview');
+      setError(e?.message || t('failed'));
     } finally {
       setLoading(false);
     }
-  }, [mode, payload]);
+  }, [mode, payload, t]);
 
   const handleClick = useCallback(() => {
     const next = !open;
@@ -67,7 +95,7 @@ export default function AiOverview({ mode, payload, accent = '#7C4DFF' }: AiOver
         }}
       >
         {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-        {loading ? 'ANALYZING…' : 'AI OVERVIEW'}
+        {loading ? t('analyzing') : t('aiOverview')}
       </button>
 
       <AnimatePresence>
@@ -86,13 +114,13 @@ export default function AiOverview({ mode, payload, accent = '#7C4DFF' }: AiOver
               {/* Header row */}
               <div className="flex items-center justify-between mb-1.5">
                 <span className="font-mono tracking-widest text-[9px]" style={{ color: accent }}>
-                  {result ? `MinervaAI ${result.generatedBy === 'gemini' ? 'AI' : 'ANALYST'}` : 'MinervaAI ANALYST'}
+                  {result && result.generatedBy === 'gemini' ? t('byAi') : t('byAnalyst')}
                 </span>
                 <div className="flex items-center gap-2">
-                  <button onClick={generate} disabled={loading} className="hover:opacity-70 transition-opacity" title="Regenerate">
+                  <button onClick={generate} disabled={loading} className="hover:opacity-70 transition-opacity" title={t('regenerate')}>
                     <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} style={{ color: accent }} />
                   </button>
-                  <button onClick={() => setOpen(false)} className="hover:opacity-70 transition-opacity" title="Close">
+                  <button onClick={() => setOpen(false)} className="hover:opacity-70 transition-opacity" title={t('close')}>
                     <X className="w-3 h-3 text-[var(--text-muted)]" />
                   </button>
                 </div>
@@ -100,7 +128,7 @@ export default function AiOverview({ mode, payload, accent = '#7C4DFF' }: AiOver
 
               {loading && !result && (
                 <div className="flex items-center gap-2 py-2 text-[var(--text-muted)]">
-                  <Loader2 className="w-3 h-3 animate-spin" /> Reading the feed…
+                  <Loader2 className="w-3 h-3 animate-spin" /> {t('reading')}
                 </div>
               )}
 
@@ -125,8 +153,8 @@ export default function AiOverview({ mode, payload, accent = '#7C4DFF' }: AiOver
                   )}
 
                   <div className="mt-2 text-[9px] font-mono text-[var(--text-muted)] tracking-wide">
-                    {result.generatedBy === 'gemini' ? 'GEMINI 2.0 FLASH' : 'HEURISTIC ANALYST'} ·{' '}
-                    {new Date(result.generatedAt).toLocaleTimeString()}
+                    {result.generatedBy === 'gemini' ? 'GEMINI 2.0 FLASH' : t('heuristicAnalyst')} ·{' '}
+                    {new Date(result.generatedAt).toLocaleTimeString(localeOf(lang))}
                   </div>
                 </>
               )}

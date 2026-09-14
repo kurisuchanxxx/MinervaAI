@@ -2,26 +2,198 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { API_GROUPS, ENDPOINT_COUNT, endpointId } from './apiCatalog';
+import MinervaLogo from '@/components/MinervaLogo';
+import { API_GROUPS, ENDPOINT_COUNT, endpointId, groupBlurb, groupTitle } from './apiCatalog';
 import { Callout, Code, CodeBlock, Pre, Section } from './docsPrimitives';
 import EndpointCard from './EndpointCard';
 import CommandPalette, { buildPaletteItems } from './CommandPalette';
+import { defineMessages, LanguageToggle, useLang, useT } from '@/lib/i18n';
 
-const GUIDE_SECTIONS = [
-  { id: 'overview', title: 'Overview' },
-  { id: 'quickstart', title: 'Quick Start' },
-  { id: 'self-hosting', title: 'Self-Hosting' },
-  { id: 'configuration', title: 'Configuration' },
-  { id: 'interface', title: 'Interface Guide' },
-  { id: 'shortcuts', title: 'Keyboard Shortcuts' },
+const MESSAGES = defineMessages({
+  en: {
+    /* Section titles */
+    overview: 'Overview',
+    quickstart: 'Quick Start',
+    selfHosting: 'Self-Hosting',
+    configuration: 'Configuration',
+    interface: 'Interface Guide',
+    shortcuts: 'Keyboard Shortcuts',
+    conventions: 'Conventions',
+    /* Chrome */
+    guide: 'Guide',
+    apiReference: 'API Reference',
+    searchDocs: 'Search documentation',
+    search: 'Search',
+    githubRepo: 'GitHub repository',
+    launchMap: 'Launch Map',
+    toggleNav: 'Toggle navigation',
+    sidebarEndpoints: 'endpoints, no key required.',
+    previous: '← Previous',
+    next: 'Next →',
+    reportIssue: 'Report an issue',
+    mitLicensed: 'MIT Licensed',
+    onThisPage: 'On this page',
+    backToTop: 'Back to top',
+    /* Hero */
+    heroLine1: 'Build on the',
+    heroLine2: 'MinervaAI platform',
+    heroBody:
+      'MinervaAI aggregates aviation, maritime, seismic, conflict, cyber, and OSINT feeds onto a single GPU-rendered map — and exposes every one of them as a plain HTTP endpoint. This is the same API the dashboard runs on. There is no separate, privileged internal tier.',
+    statEndpoints: 'Endpoints',
+    statFeeds: 'Live feeds',
+    statKeys: 'Keys required',
+    /* Snippet labels */
+    fetchAircraft: 'Fetch live aircraft',
+    aggregateCounters: 'Aggregate counters',
+    subdomainEnum: 'Passive subdomain enumeration',
+    localDev: 'Local development',
+    buildTest: 'Build and test',
+    /* Callout titles */
+    noCredentials: 'No credentials needed',
+    tryFirst: 'Try before you write code',
+    secretsHygiene: 'Secrets hygiene',
+    responsibleUse: 'Responsible use',
+    /* Configuration */
+    readByApp: 'Read by the application',
+    optionalKeys: 'Optional — higher rate limits only',
+    cfgScanner:
+      'Points at the separate RECON scanner backend. SCANNER_KEY must equal that backend’s OSIRIS_KEY. Leave both empty to disable RECON — /api/scanner then returns 503 by design.',
+    cfgIngest:
+      'Shared secret for /api/sdk/ingest. The endpoint fails closed: while this is unset, ingestion is disabled and returns 503.',
+    cfgTelegram:
+      'Comma-separated public Telegram channel names (no @) for the Telegram OSINT layer, overriding the curated default set.',
+    cfgPort: 'Host port the UI is published on. The container itself always listens on 3000.',
+    /* Interface guide */
+    uiLayerPanel: 'Layer Panel',
+    uiLayerPanelDesc: 'The left rail. Switches individual feeds on and off, and carries the theme selector.',
+    uiRecon: 'RECON Toolkit',
+    uiReconDesc:
+      'DNS, WHOIS, certificate transparency, IP and ASN enrichment, breach checks, sanctions, CVE lookup, port scanning.',
+    uiIntel: 'Intel Feed',
+    uiIntelDesc: 'A running stream of incoming events across every enabled feed.',
+    uiDossier: 'Region Dossier',
+    uiDossierDesc: 'Right-click the map for a composite summary of that location from every feed covering it.',
+    uiGraph: 'Entity Graph',
+    uiGraphDesc: 'Link analysis, expanding one node at a time into its neighbours.',
+    uiStatus: 'Status Bar',
+    uiStatusDesc: 'Community and docs links on the left, then a live ticker of prices and significant seismic events.',
+    /* Shortcuts */
+    kbFullscreen: 'Toggle fullscreen',
+    kbShare: 'Share current view',
+    kbLayers: 'Toggle layer panel',
+    kbMarkets: 'Toggle markets panel',
+    kbIntel: 'Toggle intel feed',
+    kbReset: 'Reset to global view',
+    kbHelp: 'Show help',
+    kbClose: 'Close panels / popups',
+    /* Conventions */
+    convErrors: 'Errors',
+    convErrorsDesc:
+      'Failures return a non-2xx status with an `error` key, often alongside `detail` carrying the upstream message. Most routes proxy third parties, so treat upstream failure as normal — check response.ok before reading the body.',
+    convCaching: 'Caching',
+    convCachingDesc:
+      'Routes set their own Cache-Control TTLs: typically 45–60s for fast-moving feeds, up to a day for static reference data. Polling faster than the TTL gains nothing but load. Where a route advertises refreshInterval, use it.',
+    convRate: 'Rate limits',
+    convRateDesc:
+      'The three AI endpoints allow 5 requests per minute per IP and return 429 beyond that. Other routes are bounded indirectly by their upstream sources.',
+    convTimestamps: 'Timestamps',
+    convTimestampsDesc: 'Every timestamp field is ISO 8601 in UTC.',
+  },
+  it: {
+    overview: 'Panoramica',
+    quickstart: 'Guida rapida',
+    selfHosting: 'Self-hosting',
+    configuration: 'Configurazione',
+    interface: 'Guida all’interfaccia',
+    shortcuts: 'Scorciatoie da tastiera',
+    conventions: 'Convenzioni',
+    guide: 'Guida',
+    apiReference: 'Riferimento API',
+    searchDocs: 'Cerca nella documentazione',
+    search: 'Cerca',
+    githubRepo: 'Repository GitHub',
+    launchMap: 'Apri mappa',
+    toggleNav: 'Mostra/nascondi navigazione',
+    sidebarEndpoints: 'endpoint, nessuna chiave richiesta.',
+    previous: '← Precedente',
+    next: 'Successivo →',
+    reportIssue: 'Segnala un problema',
+    mitLicensed: 'Licenza MIT',
+    onThisPage: 'In questa pagina',
+    backToTop: 'Torna su',
+    heroLine1: 'Costruisci sulla',
+    heroLine2: 'piattaforma MinervaAI',
+    heroBody:
+      'MinervaAI aggrega feed di aviazione, traffico marittimo, sismologia, conflitti, cyber e OSINT su un’unica mappa renderizzata via GPU, ed espone ognuno di essi come semplice endpoint HTTP. È la stessa API su cui gira la dashboard: non esiste un livello interno separato e privilegiato.',
+    statEndpoints: 'Endpoint',
+    statFeeds: 'Feed live',
+    statKeys: 'Chiavi richieste',
+    fetchAircraft: 'Aerei in tempo reale',
+    aggregateCounters: 'Contatori aggregati',
+    subdomainEnum: 'Enumerazione passiva dei sottodomini',
+    localDev: 'Sviluppo locale',
+    buildTest: 'Build e test',
+    noCredentials: 'Nessuna credenziale necessaria',
+    tryFirst: 'Provalo prima di scrivere codice',
+    secretsHygiene: 'Gestione dei segreti',
+    responsibleUse: 'Uso responsabile',
+    readByApp: 'Lette dall’applicazione',
+    optionalKeys: 'Facoltative: solo per rate limit più alti',
+    cfgScanner:
+      'Punta al backend separato dello scanner RECON. SCANNER_KEY deve coincidere con OSIRIS_KEY di quel backend. Lasciale entrambe vuote per disattivare RECON: in quel caso /api/scanner restituisce 503, come previsto.',
+    cfgIngest:
+      'Segreto condiviso per /api/sdk/ingest. L’endpoint è fail closed: finché non è impostata, l’ingest è disattivato e restituisce 503.',
+    cfgTelegram:
+      'Nomi di canali Telegram pubblici separati da virgola (senza @) per il layer OSINT Telegram; sostituiscono il set predefinito.',
+    cfgPort: 'Porta dell’host su cui è esposta la UI. Il container resta sempre in ascolto sulla 3000.',
+    uiLayerPanel: 'Pannello livelli',
+    uiLayerPanelDesc: 'La barra a sinistra. Attiva e disattiva i singoli feed e contiene il selettore del tema.',
+    uiRecon: 'Toolkit RECON',
+    uiReconDesc:
+      'DNS, WHOIS, certificate transparency, arricchimento IP e ASN, verifica dei data breach, sanzioni, ricerca CVE, port scanning.',
+    uiIntel: 'Feed intel',
+    uiIntelDesc: 'Un flusso continuo degli eventi in arrivo da tutti i feed attivi.',
+    uiDossier: 'Dossier regionale',
+    uiDossierDesc: 'Clic destro sulla mappa per una sintesi composita di quel punto, da tutti i feed che lo coprono.',
+    uiGraph: 'Grafo delle entità',
+    uiGraphDesc: 'Analisi dei collegamenti, espandendo un nodo alla volta nei suoi vicini.',
+    uiStatus: 'Barra di stato',
+    uiStatusDesc: 'A sinistra i link alla community e alla documentazione, poi un ticker live di prezzi ed eventi sismici rilevanti.',
+    kbFullscreen: 'Attiva/disattiva schermo intero',
+    kbShare: 'Condividi vista corrente',
+    kbLayers: 'Mostra/nascondi pannello livelli',
+    kbMarkets: 'Mostra/nascondi pannello mercati',
+    kbIntel: 'Mostra/nascondi feed intel',
+    kbReset: 'Torna alla vista globale',
+    kbHelp: 'Mostra l’aiuto',
+    kbClose: 'Chiudi pannelli / popup',
+    convErrors: 'Errori',
+    convErrorsDesc:
+      'In caso di errore viene restituito uno status non-2xx con una chiave `error`, spesso accompagnata da `detail` con il messaggio upstream. La maggior parte delle route fa da proxy verso terze parti, quindi considera normali i fallimenti upstream: controlla response.ok prima di leggere il body.',
+    convCaching: 'Caching',
+    convCachingDesc:
+      'Ogni route imposta i propri TTL di Cache-Control: in genere 45–60s per i feed che cambiano rapidamente, fino a un giorno per i dati di riferimento statici. Un polling più frequente del TTL aggiunge solo carico. Quando una route indica refreshInterval, usalo.',
+    convRate: 'Rate limit',
+    convRateDesc:
+      'I tre endpoint AI consentono 5 richieste al minuto per IP e oltre quella soglia restituiscono 429. Le altre route sono limitate indirettamente dalle rispettive sorgenti upstream.',
+    convTimestamps: 'Timestamp',
+    convTimestampsDesc: 'Tutti i campi timestamp sono in formato ISO 8601, in UTC.',
+  },
+});
+
+type MessageKey = keyof typeof MESSAGES.en;
+
+const GUIDE_SECTIONS: { id: string; key: MessageKey }[] = [
+  { id: 'overview', key: 'overview' },
+  { id: 'quickstart', key: 'quickstart' },
+  { id: 'self-hosting', key: 'selfHosting' },
+  { id: 'configuration', key: 'configuration' },
+  { id: 'interface', key: 'interface' },
+  { id: 'shortcuts', key: 'shortcuts' },
 ];
 
-const API_SECTIONS = [
-  { id: 'api', title: 'Conventions' },
-  ...API_GROUPS.map(g => ({ id: `api-${g.id}`, title: g.title })),
-];
-
-const ALL_SECTIONS = [...GUIDE_SECTIONS, ...API_SECTIONS];
+/** Section ids in page order — language-independent, used by the scroll-spy. */
+const ALL_SECTION_IDS = [...GUIDE_SECTIONS.map(s => s.id), 'api', ...API_GROUPS.map(g => `api-${g.id}`)];
 const FALLBACK_ORIGIN = 'https://minervaai.vercel.app';
 
 export default function DocsClient() {
@@ -31,8 +203,20 @@ export default function DocsClient() {
   const [progress, setProgress] = useState(0);
   const [origin, setOrigin] = useState(FALLBACK_ORIGIN);
   const mainRef = useRef<HTMLElement>(null);
+  const { lang } = useLang();
+  const t = useT(MESSAGES);
 
-  const paletteItems = useMemo(() => buildPaletteItems(ALL_SECTIONS), []);
+  const GUIDE = useMemo(() => GUIDE_SECTIONS.map(s => ({ id: s.id, title: t(s.key) })), [t]);
+  const API_SECTIONS = useMemo(
+    () => [
+      { id: 'api', title: t('conventions') },
+      ...API_GROUPS.map(g => ({ id: `api-${g.id}`, title: groupTitle(g, lang) })),
+    ],
+    [t, lang]
+  );
+  const ALL_SECTIONS = useMemo(() => [...GUIDE, ...API_SECTIONS], [GUIDE, API_SECTIONS]);
+
+  const paletteItems = useMemo(() => buildPaletteItems(ALL_SECTIONS, lang), [ALL_SECTIONS, lang]);
 
   /* Snippets should reference the instance the reader is actually on. */
   useEffect(() => setOrigin(window.location.origin), []);
@@ -66,8 +250,8 @@ export default function DocsClient() {
       },
       { rootMargin: '-96px 0px -72% 0px', threshold: 0 }
     );
-    ALL_SECTIONS.forEach(s => {
-      const el = document.getElementById(s.id);
+    ALL_SECTION_IDS.forEach(id => {
+      const el = document.getElementById(id);
       if (el) observer.observe(el);
     });
 
@@ -141,15 +325,7 @@ export default function DocsClient() {
       <header className="sticky top-0 z-[300] border-b border-white/[0.06] bg-[var(--bg-void)]/85 backdrop-blur-xl">
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 h-14 flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-            <svg
-              viewBox="0 0 650 500"
-              className="w-6 h-6 text-[var(--gold-primary)] transition-all group-hover:drop-shadow-[0_0_10px_rgba(212,175,55,0.6)]"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M158.66,157a70.231,70.231,0,0,0-14.44,42.81,70.235,70.235,0,1,0,140.47,0,70.231,70.231,0,0,0-14.28-42.81h-111.75z" />
-              <path d="m140.86,465.53c-6.7333,0-8.7137-5.4462-12.181-25.899-2.4479-14.774-7.1068-28.463-10.502-43.043-3.0219-13.117-5.6425-20.332-9.6694-26.618-6.5526-10.229-6.3011-20.921,0.71691-30.481,6.33-8.6232,6.827-11.121,6.5471-32.901-0.13783-10.725-0.56403-21.286-0.94711-23.468-0.88077-5.0179-4.6148-7.6923-13.904-9.9586-8.4827-2.0695-16.525-2.2933-41.967-1.1681-18.144,0.80245-20.457,0.72323-22.75-0.77901-5.627-3.687-2.9527-8.8405,12.261-23.626,15.69-15.249,23.876-24.688,38.811-44.75,26.839-36.053,30.927-40.83,57.501-49.189,19.575-6.1582,26.691-9.0119,62.031-10.06,24.654-0.7309,38.767,2.5963,45.357,3.3466,25.219,2.8716,66.247,14.877,91.933,26.083,13.581,5.9249,14.042,6.1723,30.115,16.152,11.981,7.4391,18.733,10.459,35.44,15.034,34.886,9.553,56.753,7.7583,92,10.378,9.2579,0.68808,49.298,3.5149,74.5,4.4784,30.689,1.1732,35.835-2.0376,38.423,0.54994,2.0315,2.0315,0.5636,8.1815,0.6024,14.306,0.0237,3.7378-0.18399,7.6642-0.48569,11.602-8.1923-1.424-8.0353-1.3676-26.54-2.9165-1.6808-0.14069-16.718-1.6695-44.5-4.1726-11.867-1.0692-70.326-2.8448-105.5-3.9248-16.997-0.52189-34.357-4.7228-51-1.2347-5.7624,1.2076,2.387-1.1161-16,7.4812-36.313,14.051-55.853,23.79-104.5,32.83-30.774,4.5201-33.208,4.9745-36.376,7.2909-1.7456,1.2764-1.662,1.6171,1.6767,6.8363,3.5642,5.5717,14.275,15.81,29.699,28.389,51.619,43.564,115.05,77.431,162.89,98.598,22.221,9.5122,37.55,14.655,50.108,16.811,61.892,13.654,134.26-9.4938,136.11-56.959,0.0489-1.256,0.49928-6.001-0.1398-12.079-0.44539-4.2357-0.89625-7.3216-2.2932-11.095-3.9795-10.75-12.413-20.407-28.672-21.755-11.746,0.022-20.375,6.1561-23.95,16.17-4.5622,12.78,1.3185,27.071,14.023,29.565,6.6403,1.3038,11.222-0.5256,14.271-4.4679,3.3424-4.3221,3.72-12.026,1.3559-15.634-2.2757-3.4732-7.2459-5.2754-10.824-3.9248-3.6125,1.3636-4.9933,0.36555-0.6538-3.1839,0.38036-0.24867,0.77844-0.4586,1.191-0.63136,6.6675-2.7918,17.127,4.1226,17.913,14.135,0.7119,11.495-7.7045,20.279-19.249,20.94-6.5659,0.37574-14.594-1.9665-20.026-7.8035-13.425-14.428-9.1712-34.885,2.9586-45.762,4.6131-4.1366,7.7535-6.0583,14.065-7.4773,19.37-4.3554,37.69,4.5134,45.528,24.301,3.5645,8.9992,3.7675,16.201,3.8515,23.221,0.70438,58.895-65.742,87.202-131.95,82.517-28.009-2.4123-46.229-6.8095-80.495-20.915-36.58-12.09-143.44-68.32-207.96-120.33-18.846-15.317-30.511-22.813-33.055-21.24-0.61585,0.38062-0.98989,11.992-0.99221,30.802-0.004,28.758-0.1019,30.352-2.0717,33.583-3.2793,5.3791-4.935,17.725-5.9822,44.608-1.6327,41.914-2.675,60.915-3.4439,62.778-1.3963,3.383-7.0306,4.6642-13.289,4.6642z" />
-            </svg>
+            <MinervaLogo className="w-6 h-6 text-[var(--gold-primary)] transition-all group-hover:drop-shadow-[0_0_10px_rgba(212,175,55,0.6)]" />
             <span className="flex flex-col leading-none">
               <span className="text-[12px] font-bold tracking-[0.3em] text-[var(--gold-primary)] font-mono">
                 MinervaAI
@@ -166,13 +342,13 @@ export default function DocsClient() {
           <button
             onClick={() => setPaletteOpen(true)}
             className="group flex items-center gap-2 px-3 h-8 rounded-lg border border-white/[0.08] bg-white/[0.02] hover:border-[var(--gold-primary)]/30 hover:bg-white/[0.04] transition-colors"
-            aria-label="Search documentation"
+            aria-label={t('searchDocs')}
           >
             <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--gold-primary)] transition-colors" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <circle cx="11" cy="11" r="7" />
               <path d="m20 20-3.5-3.5" />
             </svg>
-            <span className="hidden sm:inline text-[11.5px] text-[var(--text-muted)] font-mono">Search</span>
+            <span className="hidden sm:inline text-[11.5px] text-[var(--text-muted)] font-mono">{t('search')}</span>
             <kbd className="hidden sm:inline text-[10px] font-mono px-1.5 py-0.5 rounded border border-white/10 text-[var(--text-muted)]">
               ⌘K
             </kbd>
@@ -182,7 +358,7 @@ export default function DocsClient() {
             href="https://github.com/kurisuchanxxx/MinervaAI"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="GitHub repository"
+            aria-label={t('githubRepo')}
             className="hidden sm:flex items-center justify-center w-8 h-8 rounded-lg border border-white/[0.08] bg-white/[0.02] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-white/20 transition-colors"
           >
             <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="currentColor">
@@ -190,11 +366,13 @@ export default function DocsClient() {
             </svg>
           </a>
 
+          <LanguageToggle className="shrink-0 rounded-lg" />
+
           <Link
             href="/"
             className="hidden md:inline-flex items-center gap-1.5 text-[11px] font-mono tracking-[0.15em] uppercase px-3 h-8 rounded-lg border border-[var(--gold-primary)]/30 bg-[var(--gold-primary)]/[0.08] text-[var(--gold-primary)] hover:bg-[var(--gold-primary)]/[0.18] transition-colors"
           >
-            Launch Map
+            {t('launchMap')}
             <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
@@ -202,7 +380,7 @@ export default function DocsClient() {
 
           <button
             onClick={() => setNavOpen(v => !v)}
-            aria-label="Toggle navigation"
+            aria-label={t('toggleNav')}
             aria-expanded={navOpen}
             className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg border border-white/[0.08] text-[var(--text-muted)] hover:text-[var(--gold-primary)]"
           >
@@ -236,19 +414,18 @@ export default function DocsClient() {
           } fixed lg:sticky top-14 left-0 bottom-0 lg:bottom-auto z-[260] lg:z-auto w-64 lg:w-56 shrink-0 lg:h-[calc(100vh-3.5rem)] overflow-y-auto styled-scrollbar bg-[var(--bg-void)] lg:bg-transparent border-r lg:border-r-0 border-white/[0.06] py-6 pr-2 pl-2 lg:pl-0 transition-all duration-200`}
         >
           <div className="text-[10px] font-mono tracking-[0.3em] uppercase text-[var(--text-muted)]/70 pl-4 mb-2">
-            Guide
+            {t('guide')}
           </div>
-          {GUIDE_SECTIONS.map(navLink)}
+          {GUIDE.map(navLink)}
 
           <div className="text-[10px] font-mono tracking-[0.3em] uppercase text-[var(--text-muted)]/70 pl-4 mb-2 mt-7">
-            API Reference
+            {t('apiReference')}
           </div>
           {API_SECTIONS.map(navLink)}
 
           <div className="mt-8 mx-2 rounded-lg border border-white/[0.07] bg-white/[0.02] p-3">
             <div className="text-[11px] font-mono text-[var(--text-secondary)] leading-relaxed">
-              <span className="text-[var(--gold-primary)] font-bold">{ENDPOINT_COUNT}</span> endpoints, no key
-              required.
+              <span className="text-[var(--gold-primary)] font-bold">{ENDPOINT_COUNT}</span> {t('sidebarEndpoints')}
             </div>
           </div>
         </nav>
@@ -265,17 +442,15 @@ export default function DocsClient() {
             </div>
 
             <h1 className="text-[38px] md:text-[52px] leading-[1.05] font-bold tracking-[-0.02em] mb-5">
-              <span className="text-[var(--text-heading)]">Build on the</span>
+              <span className="text-[var(--text-heading)]">{t('heroLine1')}</span>
               <br />
               <span className="bg-gradient-to-r from-[var(--gold-primary)] via-[#F0D060] to-[var(--cyan-primary)] bg-clip-text text-transparent">
-                MinervaAI platform
+                {t('heroLine2')}
               </span>
             </h1>
 
             <p className="text-[15px] leading-[1.75] text-[var(--text-secondary)] max-w-[42rem]">
-              MinervaAI aggregates aviation, maritime, seismic, conflict, cyber, and OSINT feeds onto a single
-              GPU-rendered map — and exposes every one of them as a plain HTTP endpoint. This is the same API the
-              dashboard runs on. There is no separate, privileged internal tier.
+              {t('heroBody')}
             </p>
 
             <div className="flex flex-wrap gap-3 mt-8">
@@ -283,7 +458,7 @@ export default function DocsClient() {
                 href="#quickstart"
                 className="inline-flex items-center gap-2 px-4 h-10 rounded-lg text-[11px] font-mono tracking-wider uppercase border border-[var(--gold-primary)]/40 bg-[var(--gold-primary)]/10 text-[var(--gold-primary)] hover:bg-[var(--gold-primary)]/20 transition-colors"
               >
-                Quick Start
+                {t('quickstart')}
                 <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M5 12h14M13 6l6 6-6 6" />
                 </svg>
@@ -292,15 +467,15 @@ export default function DocsClient() {
                 href="#api"
                 className="inline-flex items-center gap-2 px-4 h-10 rounded-lg text-[11px] font-mono tracking-wider uppercase border border-white/[0.1] bg-white/[0.02] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-white/20 transition-colors"
               >
-                API Reference
+                {t('apiReference')}
               </a>
             </div>
 
             <div className="grid grid-cols-3 gap-3 mt-10">
               {[
-                { n: String(ENDPOINT_COUNT), l: 'Endpoints' },
-                { n: '20+', l: 'Live feeds' },
-                { n: '0', l: 'Keys required' },
+                { n: String(ENDPOINT_COUNT), l: t('statEndpoints') },
+                { n: '20+', l: t('statFeeds') },
+                { n: '0', l: t('statKeys') },
               ].map(s => (
                 <div key={s.l} className="rounded-xl border border-white/[0.07] bg-white/[0.015] px-4 py-3">
                   <div className="text-[24px] font-bold text-[var(--gold-primary)] font-mono leading-none">{s.n}</div>
@@ -313,30 +488,55 @@ export default function DocsClient() {
           </div>
 
           {/* ── GUIDE ── */}
-          <Section id="overview" eyebrow="Guide" title="Overview">
-            <p>
-              Every data point on the map is rendered through WebGL via MapLibre GL, which is what lets the interface
-              hold thousands of concurrent entities at 60fps. The application is a Next.js app: the map and HUD run in
-              the browser, and each live feed is normalised by a route under <Code>/api</Code> before it reaches the
-              client.
-            </p>
-            <p>
-              That boundary is deliberate. Upstream sources disagree about formats, rate limits, and CORS policy, so
-              the API layer absorbs those differences and hands back consistent JSON.
-            </p>
-            <Callout tone="good" title="No credentials needed">
-              Aviation, maritime, satellites, fires, earthquakes, weather, news, and CVE data all come from public
-              keyless feeds. Keys only matter for the optional RECON scanner and for raising rate limits.
+          <Section id="overview" eyebrow={t('guide')} title={t('overview')}>
+            {lang === 'it' ? (
+              <>
+                <p>
+                  Ogni dato sulla mappa è renderizzato in WebGL tramite MapLibre GL: è questo che permette
+                  all’interfaccia di gestire migliaia di entità simultanee a 60fps. L’applicazione è un’app Next.js: la
+                  mappa e l’HUD girano nel browser, e ogni feed live viene normalizzato da una route sotto{' '}
+                  <Code>/api</Code> prima di arrivare al client.
+                </p>
+                <p>
+                  Questo confine è voluto. Le sorgenti upstream differiscono per formati, rate limit e policy CORS, quindi
+                  il livello API assorbe queste differenze e restituisce JSON coerente.
+                </p>
+              </>
+            ) : (
+              <>
+                <p>
+                  Every data point on the map is rendered through WebGL via MapLibre GL, which is what lets the interface
+                  hold thousands of concurrent entities at 60fps. The application is a Next.js app: the map and HUD run in
+                  the browser, and each live feed is normalised by a route under <Code>/api</Code> before it reaches the
+                  client.
+                </p>
+                <p>
+                  That boundary is deliberate. Upstream sources disagree about formats, rate limits, and CORS policy, so
+                  the API layer absorbs those differences and hands back consistent JSON.
+                </p>
+              </>
+            )}
+            <Callout tone="good" title={t('noCredentials')}>
+              {lang === 'it'
+                ? 'Aviazione, traffico marittimo, satelliti, incendi, terremoti, meteo, notizie e dati CVE provengono tutti da feed pubblici senza chiave. Le chiavi servono solo per lo scanner RECON opzionale e per alzare i rate limit.'
+                : 'Aviation, maritime, satellites, fires, earthquakes, weather, news, and CVE data all come from public keyless feeds. Keys only matter for the optional RECON scanner and for raising rate limits.'}
             </Callout>
           </Section>
 
-          <Section id="quickstart" eyebrow="Guide" title="Quick Start">
-            <p>
-              Every read endpoint is a plain <Code>GET</Code> returning JSON. Nothing below needs authentication —
-              paste any of it into a terminal.
-            </p>
+          <Section id="quickstart" eyebrow={t('guide')} title={t('quickstart')}>
+            {lang === 'it' ? (
+              <p>
+                Ogni endpoint di lettura è una semplice <Code>GET</Code> che restituisce JSON. Niente di quanto segue
+                richiede autenticazione: puoi incollare tutto direttamente in un terminale.
+              </p>
+            ) : (
+              <p>
+                Every read endpoint is a plain <Code>GET</Code> returning JSON. Nothing below needs authentication —
+                paste any of it into a terminal.
+              </p>
+            )}
             <CodeBlock
-              label="Fetch live aircraft"
+              label={t('fetchAircraft')}
               tabs={[
                 { label: 'cURL', lang: 'bash', code: `curl -s ${origin}/api/flights | jq '.commercial_flights | length'` },
                 {
@@ -356,68 +556,100 @@ print(len(data["commercial_flights"]), "commercial")`,
                 },
               ]}
             />
-            <p>
-              If you only need magnitudes rather than geometry, <Code>/api/stats</Code> is the right endpoint to poll —
-              it collapses the heavy feeds into a handful of counters.
-            </p>
-            <Pre label="Aggregate counters" lang="bash">{`curl -s ${origin}/api/stats
+            {lang === 'it' ? (
+              <p>
+                Se ti servono solo i numeri e non la geometria, <Code>/api/stats</Code> è l’endpoint giusto da
+                interrogare periodicamente: riduce i feed pesanti a una manciata di contatori.
+              </p>
+            ) : (
+              <p>
+                If you only need magnitudes rather than geometry, <Code>/api/stats</Code> is the right endpoint to poll —
+                it collapses the heavy feeds into a handful of counters.
+              </p>
+            )}
+            <Pre label={t('aggregateCounters')} lang="bash">{`curl -s ${origin}/api/stats
 # { "stats": { "flights": 9241, "sats": 2043, "cctv": 2117,
 #              "weather": 58, "nuclear": 191, "incidents": 412 },
 #   "timestamp": "2026-07-29T12:00:00Z" }`}</Pre>
-            <p>The OSINT lookups each take one subject, so they compose cleanly in a pipeline:</p>
-            <Pre label="Passive subdomain enumeration" lang="bash">{`curl -s "${origin}/api/osint/certs?domain=example.com" | jq -r '.subdomains[]'`}</Pre>
-            <Callout tone="info" title="Try before you write code">
-              Every GET endpoint in the reference below has a <strong>Send request</strong> button that runs it against
-              this instance and shows the live response.
+            <p>
+              {lang === 'it'
+                ? 'Le lookup OSINT accettano ciascuna un solo soggetto, quindi si combinano facilmente in una pipeline:'
+                : 'The OSINT lookups each take one subject, so they compose cleanly in a pipeline:'}
+            </p>
+            <Pre label={t('subdomainEnum')} lang="bash">{`curl -s "${origin}/api/osint/certs?domain=example.com" | jq -r '.subdomains[]'`}</Pre>
+            <Callout tone="info" title={t('tryFirst')}>
+              {lang === 'it' ? (
+                <>
+                  Ogni endpoint GET nel riferimento qui sotto ha un pulsante <strong>Invia richiesta</strong> che lo
+                  esegue su questa istanza e mostra la risposta live.
+                </>
+              ) : (
+                <>
+                  Every GET endpoint in the reference below has a <strong>Send request</strong> button that runs it against
+                  this instance and shows the live response.
+                </>
+              )}
             </Callout>
           </Section>
 
-          <Section id="self-hosting" eyebrow="Guide" title="Self-Hosting">
-            <p>MinervaAI needs Node 20+ and no database. A local instance is three commands:</p>
-            <Pre label="Local development" lang="bash">{`git clone https://github.com/kurisuchanxxx/MinervaAI.git
+          <Section id="self-hosting" eyebrow={t('guide')} title={t('selfHosting')}>
+            <p>
+              {lang === 'it'
+                ? 'MinervaAI richiede Node 20+ e nessun database. Per un’istanza locale bastano tre comandi:'
+                : 'MinervaAI needs Node 20+ and no database. A local instance is three commands:'}
+            </p>
+            <Pre label={t('localDev')} lang="bash">{`git clone https://github.com/kurisuchanxxx/MinervaAI.git
 cd osiris
 npm install
 npm run dev        # http://localhost:3000`}</Pre>
-            <p>For a production build, or to run the checks:</p>
-            <Pre label="Build and test" lang="bash">{`npm run build && npm start
+            <p>
+              {lang === 'it'
+                ? 'Per una build di produzione, o per eseguire i controlli:'
+                : 'For a production build, or to run the checks:'}
+            </p>
+            <Pre label={t('buildTest')} lang="bash">{`npm run build && npm start
 npm run lint
 npm test           # vitest
 npm run test:live  # includes tests that hit live upstream feeds`}</Pre>
-            <p>
-              A <Code>Dockerfile</Code> and <Code>docker-compose.yml</Code> ship with the repository. The container
-              always listens on port 3000 internally; <Code>OSIRIS_PORT</Code> controls the host port it is published
-              on.
-            </p>
+            {lang === 'it' ? (
+              <p>
+                Nel repository sono inclusi un <Code>Dockerfile</Code> e un <Code>docker-compose.yml</Code>. All’interno
+                il container resta sempre in ascolto sulla porta 3000; <Code>OSIRIS_PORT</Code> determina la porta
+                dell’host su cui viene esposto.
+              </p>
+            ) : (
+              <p>
+                A <Code>Dockerfile</Code> and <Code>docker-compose.yml</Code> ship with the repository. The container
+                always listens on port 3000 internally; <Code>OSIRIS_PORT</Code> controls the host port it is published
+                on.
+              </p>
+            )}
             <Pre label="Docker" lang="bash">{`cp .env.example .env
 docker compose up -d`}</Pre>
           </Section>
 
-          <Section id="configuration" eyebrow="Guide" title="Configuration">
-            <p>
-              Copy <Code>.env.example</Code> to <Code>.env</Code>. Read that file before filling anything in — most of
-              the keys it lists are reserved for future sources and are not consumed by the current code.
-            </p>
+          <Section id="configuration" eyebrow={t('guide')} title={t('configuration')}>
+            {lang === 'it' ? (
+              <p>
+                Copia <Code>.env.example</Code> in <Code>.env</Code>. Leggi quel file prima di compilare qualsiasi valore:
+                la maggior parte delle chiavi elencate è riservata a sorgenti future e non viene usata dal codice
+                attuale.
+              </p>
+            ) : (
+              <p>
+                Copy <Code>.env.example</Code> to <Code>.env</Code>. Read that file before filling anything in — most of
+                the keys it lists are reserved for future sources and are not consumed by the current code.
+              </p>
+            )}
             <h3 className="text-[12px] font-mono tracking-[0.15em] uppercase text-[var(--text-primary)] pt-2">
-              Read by the application
+              {t('readByApp')}
             </h3>
             <div className="space-y-2">
               {[
-                {
-                  k: 'SCANNER_URL / SCANNER_KEY',
-                  v: 'Points at the separate RECON scanner backend. SCANNER_KEY must equal that backend’s OSIRIS_KEY. Leave both empty to disable RECON — /api/scanner then returns 503 by design.',
-                },
-                {
-                  k: 'SDK_INGEST_KEY',
-                  v: 'Shared secret for /api/sdk/ingest. The endpoint fails closed: while this is unset, ingestion is disabled and returns 503.',
-                },
-                {
-                  k: 'OSIRIS_TELEGRAM_CHANNELS',
-                  v: 'Comma-separated public Telegram channel names (no @) for the Telegram OSINT layer, overriding the curated default set.',
-                },
-                {
-                  k: 'OSIRIS_PORT',
-                  v: 'Host port the UI is published on. The container itself always listens on 3000.',
-                },
+                { k: 'SCANNER_URL / SCANNER_KEY', v: t('cfgScanner') },
+                { k: 'SDK_INGEST_KEY', v: t('cfgIngest') },
+                { k: 'OSIRIS_TELEGRAM_CHANNELS', v: t('cfgTelegram') },
+                { k: 'OSIRIS_PORT', v: t('cfgPort') },
               ].map(row => (
                 <div
                   key={row.k}
@@ -429,50 +661,44 @@ docker compose up -d`}</Pre>
               ))}
             </div>
             <h3 className="text-[12px] font-mono tracking-[0.15em] uppercase text-[var(--text-primary)] pt-4">
-              Optional — higher rate limits only
+              {t('optionalKeys')}
             </h3>
             <p>
               <Code>FIRMS_API_KEY</Code>, <Code>OPENSKY_CLIENT_ID</Code>, <Code>OPENSKY_CLIENT_SECRET</Code>,{' '}
-              <Code>N2YO_API_KEY</Code>, <Code>AIS_API_KEY</Code>. The public keyless feeds are used unless you extend
-              the code to prefer these.
+              <Code>N2YO_API_KEY</Code>, <Code>AIS_API_KEY</Code>.{' '}
+              {lang === 'it'
+                ? 'Vengono usati i feed pubblici senza chiave, a meno che tu non modifichi il codice per preferire queste.'
+                : 'The public keyless feeds are used unless you extend the code to prefer these.'}
             </p>
-            <Callout tone="warn" title="Secrets hygiene">
-              Generate secrets with <Code>openssl rand -hex 32</Code>. Never commit a populated <Code>.env</Code> —
-              only <Code>.env.example</Code> belongs in version control.
+            <Callout tone="warn" title={t('secretsHygiene')}>
+              {lang === 'it' ? (
+                <>
+                  Genera i segreti con <Code>openssl rand -hex 32</Code>. Non fare mai commit di un <Code>.env</Code>{' '}
+                  compilato: nel version control va solo <Code>.env.example</Code>.
+                </>
+              ) : (
+                <>
+                  Generate secrets with <Code>openssl rand -hex 32</Code>. Never commit a populated <Code>.env</Code> —
+                  only <Code>.env.example</Code> belongs in version control.
+                </>
+              )}
             </Callout>
           </Section>
 
-          <Section id="interface" eyebrow="Guide" title="Interface Guide">
+          <Section id="interface" eyebrow={t('guide')} title={t('interface')}>
             <p>
-              The map fills the viewport and every control floats above it. Panels are toggles rather than
-              destinations, so you can build up exactly the picture you need and drop the rest.
+              {lang === 'it'
+                ? 'La mappa occupa tutto il viewport e ogni controllo fluttua sopra di essa. I pannelli si attivano e disattivano invece di essere pagine a sé, così puoi comporre esattamente il quadro che ti serve e scartare il resto.'
+                : 'The map fills the viewport and every control floats above it. Panels are toggles rather than destinations, so you can build up exactly the picture you need and drop the rest.'}
             </p>
             <div className="grid sm:grid-cols-2 gap-2.5">
               {[
-                {
-                  k: 'Layer Panel',
-                  v: 'The left rail. Switches individual feeds on and off, and carries the theme selector.',
-                },
-                {
-                  k: 'RECON Toolkit',
-                  v: 'DNS, WHOIS, certificate transparency, IP and ASN enrichment, breach checks, sanctions, CVE lookup, port scanning.',
-                },
-                {
-                  k: 'Intel Feed',
-                  v: 'A running stream of incoming events across every enabled feed.',
-                },
-                {
-                  k: 'Region Dossier',
-                  v: 'Right-click the map for a composite summary of that location from every feed covering it.',
-                },
-                {
-                  k: 'Entity Graph',
-                  v: 'Link analysis, expanding one node at a time into its neighbours.',
-                },
-                {
-                  k: 'Status Bar',
-                  v: 'Community and docs links on the left, then a live ticker of prices and significant seismic events.',
-                },
+                { k: t('uiLayerPanel'), v: t('uiLayerPanelDesc') },
+                { k: t('uiRecon'), v: t('uiReconDesc') },
+                { k: t('uiIntel'), v: t('uiIntelDesc') },
+                { k: t('uiDossier'), v: t('uiDossierDesc') },
+                { k: t('uiGraph'), v: t('uiGraphDesc') },
+                { k: t('uiStatus'), v: t('uiStatusDesc') },
               ].map(row => (
                 <div
                   key={row.k}
@@ -485,20 +711,26 @@ docker compose up -d`}</Pre>
             </div>
           </Section>
 
-          <Section id="shortcuts" eyebrow="Guide" title="Keyboard Shortcuts">
-            <p>
-              Press <Code>?</Code> at any time inside the application to bring up this list.
-            </p>
+          <Section id="shortcuts" eyebrow={t('guide')} title={t('shortcuts')}>
+            {lang === 'it' ? (
+              <p>
+                Premi <Code>?</Code> in qualsiasi momento all’interno dell’applicazione per visualizzare questo elenco.
+              </p>
+            ) : (
+              <p>
+                Press <Code>?</Code> at any time inside the application to bring up this list.
+              </p>
+            )}
             <div className="grid sm:grid-cols-2 gap-2">
               {[
-                { key: 'F', desc: 'Toggle fullscreen' },
-                { key: 'S', desc: 'Share current view' },
-                { key: 'L', desc: 'Toggle layer panel' },
-                { key: 'M', desc: 'Toggle markets panel' },
-                { key: 'I', desc: 'Toggle intel feed' },
-                { key: 'R', desc: 'Reset to global view' },
-                { key: '?', desc: 'Show help' },
-                { key: 'ESC', desc: 'Close panels / popups' },
+                { key: 'F', desc: t('kbFullscreen') },
+                { key: 'S', desc: t('kbShare') },
+                { key: 'L', desc: t('kbLayers') },
+                { key: 'M', desc: t('kbMarkets') },
+                { key: 'I', desc: t('kbIntel') },
+                { key: 'R', desc: t('kbReset') },
+                { key: '?', desc: t('kbHelp') },
+                { key: 'ESC', desc: t('kbClose') },
               ].map(s => (
                 <div
                   key={s.key}
@@ -511,33 +743,39 @@ docker compose up -d`}</Pre>
                 </div>
               ))}
             </div>
-            <p className="pt-2">
-              In these docs, <Code>⌘K</Code> (or <Code>/</Code>) opens search from anywhere on the page.
-            </p>
+            {lang === 'it' ? (
+              <p className="pt-2">
+                In questa documentazione, <Code>⌘K</Code> (o <Code>/</Code>) apre la ricerca da qualsiasi punto della
+                pagina.
+              </p>
+            ) : (
+              <p className="pt-2">
+                In these docs, <Code>⌘K</Code> (or <Code>/</Code>) opens search from anywhere on the page.
+              </p>
+            )}
           </Section>
 
           {/* ── API REFERENCE ── */}
-          <Section id="api" eyebrow="API Reference" title="Conventions">
-            <p>
-              All routes live under <Code>/api</Code> on whatever origin serves the application. Reads are{' '}
-              <Code>GET</Code>, writes are <Code>POST</Code> with a JSON body. Nothing requires authentication except{' '}
-              <Code>/api/sdk/ingest</Code> and <Code>/api/github-webhook</Code>.
-            </p>
+          <Section id="api" eyebrow={t('apiReference')} title={t('conventions')}>
+            {lang === 'it' ? (
+              <p>
+                Tutte le route si trovano sotto <Code>/api</Code>, su qualunque origin serva l’applicazione. Le letture
+                sono <Code>GET</Code>, le scritture sono <Code>POST</Code> con body JSON. Nessuna richiede autenticazione,
+                tranne <Code>/api/sdk/ingest</Code> e <Code>/api/github-webhook</Code>.
+              </p>
+            ) : (
+              <p>
+                All routes live under <Code>/api</Code> on whatever origin serves the application. Reads are{' '}
+                <Code>GET</Code>, writes are <Code>POST</Code> with a JSON body. Nothing requires authentication except{' '}
+                <Code>/api/sdk/ingest</Code> and <Code>/api/github-webhook</Code>.
+              </p>
+            )}
             <div className="space-y-2.5">
               {[
-                {
-                  k: 'Errors',
-                  v: 'Failures return a non-2xx status with an `error` key, often alongside `detail` carrying the upstream message. Most routes proxy third parties, so treat upstream failure as normal — check response.ok before reading the body.',
-                },
-                {
-                  k: 'Caching',
-                  v: 'Routes set their own Cache-Control TTLs: typically 45–60s for fast-moving feeds, up to a day for static reference data. Polling faster than the TTL gains nothing but load. Where a route advertises refreshInterval, use it.',
-                },
-                {
-                  k: 'Rate limits',
-                  v: 'The three AI endpoints allow 5 requests per minute per IP and return 429 beyond that. Other routes are bounded indirectly by their upstream sources.',
-                },
-                { k: 'Timestamps', v: 'Every timestamp field is ISO 8601 in UTC.' },
+                { k: t('convErrors'), v: t('convErrorsDesc') },
+                { k: t('convCaching'), v: t('convCachingDesc') },
+                { k: t('convRate'), v: t('convRateDesc') },
+                { k: t('convTimestamps'), v: t('convTimestampsDesc') },
               ].map(row => (
                 <div key={row.k} className="rounded-xl border border-white/[0.07] bg-white/[0.015] p-3.5">
                   <div className="font-mono text-[11.5px] text-[var(--gold-primary)] mb-1.5">{row.k}</div>
@@ -545,16 +783,26 @@ docker compose up -d`}</Pre>
                 </div>
               ))}
             </div>
-            <Callout tone="warn" title="Responsible use">
-              The RECON scanner and <Code>/api/osint/sweep</Code> generate traffic against the targets you name. Only
-              point them at infrastructure you own or have written authorisation to test. The remaining OSINT routes
-              are passive and query third-party datasets rather than the subject itself.
+            <Callout tone="warn" title={t('responsibleUse')}>
+              {lang === 'it' ? (
+                <>
+                  Lo scanner RECON e <Code>/api/osint/sweep</Code> generano traffico verso i target che indichi. Usali
+                  solo su infrastrutture di tua proprietà o per cui hai un’autorizzazione scritta a eseguire test. Le
+                  altre route OSINT sono passive e interrogano dataset di terze parti, non il soggetto stesso.
+                </>
+              ) : (
+                <>
+                  The RECON scanner and <Code>/api/osint/sweep</Code> generate traffic against the targets you name. Only
+                  point them at infrastructure you own or have written authorisation to test. The remaining OSINT routes
+                  are passive and query third-party datasets rather than the subject itself.
+                </>
+              )}
             </Callout>
           </Section>
 
           {API_GROUPS.map(group => (
-            <Section key={group.id} id={`api-${group.id}`} eyebrow="API Reference" title={group.title}>
-              <p>{group.blurb}</p>
+            <Section key={group.id} id={`api-${group.id}`} eyebrow={t('apiReference')} title={groupTitle(group, lang)}>
+              <p>{groupBlurb(group, lang)}</p>
               <div className="space-y-2.5 pt-1">
                 {group.endpoints.map(ep => (
                   <EndpointCard key={endpointId(ep)} ep={ep} origin={origin} />
@@ -572,7 +820,7 @@ docker compose up -d`}</Pre>
                   className="rounded-xl border border-white/[0.07] bg-white/[0.015] p-4 hover:border-[var(--gold-primary)]/30 transition-colors"
                 >
                   <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-[var(--text-muted)] mb-1">
-                    ← Previous
+                    {t('previous')}
                   </div>
                   <div className="text-[12px] text-[var(--text-primary)]">{prev.title}</div>
                 </a>
@@ -585,7 +833,7 @@ docker compose up -d`}</Pre>
                   className="rounded-xl border border-white/[0.07] bg-white/[0.015] p-4 hover:border-[var(--gold-primary)]/30 transition-colors sm:text-right"
                 >
                   <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-[var(--text-muted)] mb-1">
-                    Next →
+                    {t('next')}
                   </div>
                   <div className="text-[12px] text-[var(--text-primary)]">{next.title}</div>
                 </a>
@@ -597,10 +845,10 @@ docker compose up -d`}</Pre>
           <footer className="border-t border-white/[0.06] pt-6 pb-16 flex flex-wrap items-center gap-x-5 gap-y-2 text-[10px] font-mono text-[var(--text-muted)]">
             {[
               { href: 'https://github.com/kurisuchanxxx/MinervaAI', label: 'GitHub' },
-              { href: 'https://github.com/kurisuchanxxx/MinervaAI/issues', label: 'Report an issue' },
+              { href: 'https://github.com/kurisuchanxxx/MinervaAI/issues', label: t('reportIssue') },
             ].map(l => (
               <a
-                key={l.label}
+                key={l.href}
                 href={l.href}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -609,14 +857,14 @@ docker compose up -d`}</Pre>
                 {l.label}
               </a>
             ))}
-            <span className="ml-auto opacity-60">MIT Licensed</span>
+            <span className="ml-auto opacity-60">{t('mitLicensed')}</span>
           </footer>
         </main>
 
         {/* ── Right rail: on this page ── */}
         <aside className="hidden xl:block w-52 shrink-0 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto styled-scrollbar py-16">
           <div className="text-[10px] font-mono tracking-[0.3em] uppercase text-[var(--text-muted)]/70 mb-3">
-            On this page
+            {t('onThisPage')}
           </div>
           <div className="space-y-0.5">
             {ALL_SECTIONS.map(s => (
@@ -641,7 +889,7 @@ docker compose up -d`}</Pre>
             <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="m18 15-6-6-6 6" />
             </svg>
-            Back to top
+            {t('backToTop')}
           </button>
         </aside>
       </div>

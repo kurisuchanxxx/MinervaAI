@@ -9,6 +9,44 @@ import {
   cumulativeDistances, stepPositions, computeProgress, shouldAnnounce, announcementText,
   type NavStep, type NavFix, type NavProgress,
 } from '@/lib/navigation';
+import { defineMessages, useT, useLang, translate, localeOf, type Lang } from '@/lib/i18n';
+
+const MESSAGES = defineMessages({
+  en: {
+    now: 'Now',
+    hr: 'hr',
+    spokenArrived: 'You have arrived at your destination.',
+    spokenRecalculating: 'Recalculating.',
+    arrivedAt: 'You have arrived at {dest}',
+    starting: 'Starting…',
+    recenter: 'Recenter on me and resume follow',
+    unmute: 'Unmute voice guidance',
+    mute: 'Mute voice guidance',
+    endNav: 'End navigation',
+    recalculatingRoute: 'Recalculating route…',
+    offRoute: 'Off route',
+    toDest: 'to {dest}',
+    then: 'Then',
+    waitingFix: 'Waiting for a position fix… navigation needs HTTPS or localhost.',
+  },
+  it: {
+    now: 'Ora',
+    hr: 'h',
+    spokenArrived: 'Sei arrivato a destinazione.',
+    spokenRecalculating: 'Ricalcolo del percorso.',
+    arrivedAt: 'Sei arrivato a {dest}',
+    starting: 'Avvio…',
+    recenter: 'Ricentra su di me e riprendi a seguire',
+    unmute: 'Riattiva guida vocale',
+    mute: 'Disattiva guida vocale',
+    endNav: 'Termina navigazione',
+    recalculatingRoute: 'Ricalcolo percorso…',
+    offRoute: 'Fuori percorso',
+    toDest: 'verso {dest}',
+    then: 'Poi',
+    waitingFix: 'In attesa della posizione… la navigazione richiede HTTPS o localhost.',
+  },
+});
 
 /* ═══════════════════════════════════════════════════════════════
    MinervaAI — Live Navigation
@@ -50,21 +88,24 @@ function ManeuverIcon({ type, className }: { type: string; className?: string })
 }
 
 /** Guidance distances read better rounded than exact. */
-export function navDistance(m: number): string {
-  if (m < 20) return 'Now';
+export function navDistance(m: number, lang: Lang = 'en'): string {
+  if (m < 20) return translate(MESSAGES, lang, 'now');
   if (m < 1000) return `${Math.round(m / 10) * 10} m`;
-  return `${(m / 1000).toFixed(1)} km`;
+  const km = (m / 1000).toFixed(1);
+  return `${lang === 'it' ? km.replace('.', ',') : km} km`;
 }
 
-export function navDuration(s: number): string {
+export function navDuration(s: number, lang: Lang = 'en'): string {
   const mins = Math.max(1, Math.round(s / 60));
   if (mins < 60) return `${mins} min`;
-  return `${Math.floor(mins / 60)} hr ${mins % 60} min`;
+  return `${Math.floor(mins / 60)} ${translate(MESSAGES, lang, 'hr')} ${mins % 60} min`;
 }
 
 export default function NavigationView({
   route, destinationLabel, fix, onExit, onReroute, onProgress, following, onRecenter,
 }: NavigationViewProps) {
+  const t = useT(MESSAGES);
+  const { lang } = useLang();
   const [muted, setMuted] = useState(false);
   const [rerouting, setRerouting] = useState(false);
   // Coarse clock for the arrival time — reading Date.now() during render is
@@ -98,11 +139,13 @@ export default function NavigationView({
     [fix, geometry, route.steps, stepAlong, route.duration, cumulative],
   );
 
-  const speak = useCallback((text: string) => {
+  // Maneuver instructions come from the routing engine in English, so they keep
+  // an English voice; the app's own phrases are spoken in the UI language.
+  const speak = useCallback((text: string, locale: string = 'en-US') => {
     if (muted || typeof window === 'undefined' || !window.speechSynthesis) return;
     const u = new SpeechSynthesisUtterance(text);
     u.rate = 1.05;
-    u.lang = 'en-US';
+    u.lang = locale;
     window.speechSynthesis.speak(u);
   }, [muted]);
 
@@ -116,7 +159,7 @@ export default function NavigationView({
     if (p.arrived) {
       if (!spoken.current[-1]) {
         spoken.current[-1] = 1;
-        speak('You have arrived at your destination.');
+        speak(t('spokenArrived'), localeOf(lang));
       }
       return;
     }
@@ -127,7 +170,7 @@ export default function NavigationView({
       if (offRouteSince.current === null) offRouteSince.current = Date.now();
       else if (Date.now() - offRouteSince.current > 6000 && !rerouting) {
         setRerouting(true);
-        speak('Recalculating.');
+        speak(t('spokenRecalculating'), localeOf(lang));
         onReroute({ lat: fix.lat, lng: fix.lng });
       }
       return;
@@ -141,7 +184,7 @@ export default function NavigationView({
       spoken.current[p.stepIndex] = band;
       speak(announcementText(step.instruction, band));
     }
-  }, [progress, fix, route.steps, speak, onReroute, onProgress, rerouting]);
+  }, [progress, fix, route.steps, speak, onReroute, onProgress, rerouting, t, lang]);
 
   // Keep the display awake — a navigation view that sleeps mid-junction is useless.
   useEffect(() => {
@@ -179,11 +222,11 @@ export default function NavigationView({
           <div className="flex-1 min-w-0">
             {!arrived && progress && (
               <div className="text-[22px] leading-none text-[var(--gold-primary)] tabular-nums mb-1">
-                {navDistance(progress.distanceToStep)}
+                {navDistance(progress.distanceToStep, lang)}
               </div>
             )}
             <div className={`text-[11px] leading-snug ${arrived ? 'text-[var(--alert-green)]' : 'text-[var(--text-primary)]'}`}>
-              {arrived ? `You have arrived at ${destinationLabel}` : step?.instruction ?? 'Starting…'}
+              {arrived ? t('arrivedAt', { dest: destinationLabel }) : step?.instruction ?? t('starting')}
             </div>
           </div>
 
@@ -193,8 +236,8 @@ export default function NavigationView({
             {onRecenter && !following && (
               <button
                 onClick={onRecenter}
-                title="Recenter on me and resume follow"
-                aria-label="Recenter on me and resume follow"
+                title={t('recenter')}
+                aria-label={t('recenter')}
                 className="p-1.5 rounded-md text-[#4285F4] bg-[rgba(66,133,244,0.14)] hover:bg-[rgba(66,133,244,0.24)] transition-colors animate-pulse"
               >
                 <LocateFixed className="w-4 h-4" />
@@ -203,15 +246,15 @@ export default function NavigationView({
             <button
               onClick={() => { setMuted((m) => !m); window.speechSynthesis?.cancel(); }}
               aria-pressed={muted}
-              title={muted ? 'Unmute voice guidance' : 'Mute voice guidance'}
+              title={muted ? t('unmute') : t('mute')}
               className="p-1.5 rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
             >
               {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
             </button>
             <button
               onClick={onExit}
-              title="End navigation"
-              aria-label="End navigation"
+              title={t('endNav')}
+              aria-label={t('endNav')}
               className="p-1.5 rounded-md text-[var(--text-muted)] hover:text-[var(--alert-red)] transition-colors"
             >
               <X className="w-4 h-4" />
@@ -231,25 +274,25 @@ export default function NavigationView({
         <div className="px-4 py-2.5 flex items-center justify-between gap-3">
           {rerouting ? (
             <span className="flex items-center gap-2 text-[11px] text-[var(--alert-orange)]">
-              <Loader2 className="w-3 h-3 animate-spin" /> Recalculating route…
+              <Loader2 className="w-3 h-3 animate-spin" /> {t('recalculatingRoute')}
             </span>
           ) : progress?.offRoute ? (
             <span className="flex items-center gap-2 text-[11px] text-[var(--alert-orange)]">
-              <AlertTriangle className="w-3 h-3" /> Off route
+              <AlertTriangle className="w-3 h-3" /> {t('offRoute')}
             </span>
           ) : (
             <span className="text-[11px] text-[var(--text-muted)] truncate">
-              to {destinationLabel}
+              {t('toDest', { dest: destinationLabel })}
             </span>
           )}
 
           {progress && !arrived && (
             <span className="flex items-baseline gap-2.5 flex-shrink-0 tabular-nums">
-              <span className="text-[12px] text-[var(--text-primary)]">{navDuration(progress.durationRemaining)}</span>
-              <span className="text-[11px] text-[var(--text-secondary)]">{navDistance(progress.distanceRemaining)}</span>
+              <span className="text-[12px] text-[var(--text-primary)]">{navDuration(progress.durationRemaining, lang)}</span>
+              <span className="text-[11px] text-[var(--text-secondary)]">{navDistance(progress.distanceRemaining, lang)}</span>
               <span className="text-[11px] text-[var(--text-muted)]">
                 {new Date(now + progress.durationRemaining * 1000)
-                  .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  .toLocaleTimeString(localeOf(lang), { hour: '2-digit', minute: '2-digit' })}
               </span>
             </span>
           )}
@@ -259,7 +302,7 @@ export default function NavigationView({
       {/* ── the turn after this one ── */}
       {progress && !arrived && route.steps[progress.stepIndex + 1] && (
         <div className="glass-panel px-4 py-2 flex items-center gap-3">
-          <span className="text-[9px] uppercase tracking-[0.15em] text-[var(--text-muted)] flex-shrink-0">Then</span>
+          <span className="text-[9px] uppercase tracking-[0.15em] text-[var(--text-muted)] flex-shrink-0">{t('then')}</span>
           <ManeuverIcon type={route.steps[progress.stepIndex + 1].type} className="w-4 h-4" />
           <span className="text-[11px] text-[var(--text-secondary)] truncate">
             {route.steps[progress.stepIndex + 1].instruction}
@@ -269,7 +312,7 @@ export default function NavigationView({
 
       {!fix && (
         <div className="glass-panel px-4 py-2 text-[11px] text-[var(--alert-orange)]">
-          Waiting for a position fix… navigation needs HTTPS or localhost.
+          {t('waitingFix')}
         </div>
       )}
     </div>

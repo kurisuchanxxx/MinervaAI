@@ -6,6 +6,7 @@ import {
   type IChartApi, type ISeriesApi, type UTCTimestamp,
 } from 'lightweight-charts';
 import { X, Loader2, AlertTriangle } from 'lucide-react';
+import { defineMessages, useT } from '@/lib/i18n';
 
 interface Candle {
   time: number;
@@ -24,6 +25,25 @@ interface MarketChartProps {
    trading tool uses, and what the API's range keys mean. */
 const RANGES = ['1m', '15m', '24H', '1W', '1M', '6M', '1Y'] as const;
 type Range = typeof RANGES[number];
+
+const MESSAGES = defineMessages({
+  en: {
+    overRange: '{sign}{pct}% over {range}',
+    closeChart: 'Close chart',
+    loading: 'LOADING {range}',
+    noData: 'NO {range} DATA FOR {symbol}',
+    r1W: '1W',
+    r1Y: '1Y',
+  },
+  it: {
+    overRange: '{sign}{pct}% su {range}',
+    closeChart: 'Chiudi grafico',
+    loading: 'CARICAMENTO {range}',
+    noData: 'NESSUN DATO {range} PER {symbol}',
+    r1W: '1S',
+    r1Y: '1A',
+  },
+});
 
 /** Bars finer than a day need the clock on the axis, not just the date. */
 const INTRADAY: Record<Range, boolean> = {
@@ -57,7 +77,10 @@ export default function MarketChart({ symbol, name, onClose, large = false }: Ma
   const candleRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const volumeRef = useRef<ISeriesApi<'Histogram'> | null>(null);
 
+  const t = useT(MESSAGES);
   const [range, setRange] = useState<Range>('1M');
+  /** Display label for a range key — week and year letters differ in Italian. */
+  const rangeLabel = (r: Range) => (r === '1W' ? t('r1W') : r === '1Y' ? t('r1Y') : r);
   /* Keyed by the request it answers, so status is derived rather than set on
      the way in — a synchronous setState in the effect body would cascade. */
   const [result, setResult] = useState<{ key: string; rows: Candle[] | null }>({ key: '', rows: null });
@@ -185,11 +208,11 @@ export default function MarketChart({ symbol, name, onClose, large = false }: Ma
           </div>
           {rangeChange !== null && (
             <div className="text-[10px] font-mono tabular-nums" style={{ color: rangeChange >= 0 ? UP : DOWN }}>
-              {rangeChange >= 0 ? '+' : ''}{rangeChange.toFixed(2)}% over {range}
+              {t('overRange', { sign: rangeChange >= 0 ? '+' : '', pct: rangeChange.toFixed(2), range: rangeLabel(range) })}
             </div>
           )}
         </div>
-        <button onClick={onClose} className="text-[var(--text-muted)] hover:text-white transition-colors shrink-0" title="Close chart">
+        <button onClick={onClose} className="text-[var(--text-muted)] hover:text-white transition-colors shrink-0" title={t('closeChart')}>
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -215,8 +238,8 @@ export default function MarketChart({ symbol, name, onClose, large = false }: Ma
         {status !== 'ready' && (
           <div className="absolute inset-0 flex items-center justify-center gap-1.5 bg-black/40 text-[10px] font-mono text-[var(--text-muted)]">
             {status === 'loading'
-              ? <><Loader2 className="w-3 h-3 animate-spin" /> LOADING {range}</>
-              : <><AlertTriangle className="w-3 h-3" /> NO {range} DATA FOR {symbol}</>}
+              ? <><Loader2 className="w-3 h-3 animate-spin" /> {t('loading', { range: rangeLabel(range) })}</>
+              : <><AlertTriangle className="w-3 h-3" /> {t('noData', { range: rangeLabel(range), symbol })}</>}
           </div>
         )}
       </div>
@@ -238,7 +261,7 @@ export default function MarketChart({ symbol, name, onClose, large = false }: Ma
                   : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)] border border-transparent'
               }`}
             >
-              {r}
+              {rangeLabel(r)}
             </button>
           ))}
         </div>

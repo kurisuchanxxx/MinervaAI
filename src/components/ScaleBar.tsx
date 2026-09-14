@@ -1,6 +1,12 @@
 'use client';
 
 import { useMemo } from 'react';
+import { defineMessages, useT } from '@/lib/i18n';
+
+const MESSAGES = defineMessages({
+  en: { aria: 'Approximate scale at map center: {label}' },
+  it: { aria: 'Scala approssimativa al centro della mappa: {label}' },
+});
 
 /* ═══════════════════════════════════════════════════════════════
    MinervaAI — Scale Bar
@@ -38,10 +44,11 @@ export function scaleFor(zoom: number, latitude: number): { barWidth: number; la
 }
 
 export default function ScaleBar({ zoom, latitude }: ScaleBarProps) {
+  const t = useT(MESSAGES);
   const scaleInfo = useMemo(() => scaleFor(zoom, latitude), [zoom, latitude]);
 
   return (
-    <div className="flex items-center gap-1.5 pointer-events-none select-none" aria-label={`Approximate scale at map center: ${scaleInfo.label}`}>
+    <div className="flex items-center gap-1.5 pointer-events-none select-none" aria-label={t('aria', { label: scaleInfo.label })}>
       <div className="flex flex-col items-start">
         {/* Scale line with ticks */}
         <div className="relative" style={{ width: scaleInfo.barWidth }}>

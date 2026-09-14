@@ -3,6 +3,26 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { defineMessages, useT, useLang, localeOf } from '@/lib/i18n';
+
+const MESSAGES = defineMessages({
+  en: {
+    docsTitle: 'Documentation & API Reference',
+    docs: 'Docs',
+    online: 'ONLINE',
+    magnitude: 'Magnitude {m}',
+    depth: 'Depth:',
+    time: 'Time:',
+  },
+  it: {
+    docsTitle: 'Documentazione e riferimento API',
+    docs: 'Docs',
+    online: 'ONLINE',
+    magnitude: 'Magnitudo {m}',
+    depth: 'Profondità:',
+    time: 'Ora:',
+  },
+});
 
 interface CryptoPrice { symbol: string; price: number; change24h?: number; }
 interface Earthquake { id: string; magnitude: number; place: string; time: number; depth: number; }
@@ -60,6 +80,8 @@ const formatChange = (change: number | undefined) => {
 };
 
 export default function GlobalStatusBar() {
+  const t = useT(MESSAGES);
+  const { lang } = useLang();
   const [crypto, setCrypto] = useState<CryptoPrice[]>([]);
   const [quakes, setQuakes] = useState<Earthquake[]>([]);
   const [hoveredQuake, setHoveredQuake] = useState<Earthquake | null>(null);
@@ -138,11 +160,11 @@ export default function GlobalStatusBar() {
         {/* ── LEFT: Documentation link ── */}
         <div className="flex-shrink-0 h-full flex items-center pointer-events-auto">
           {/* Documentation & API reference */}
-          <Link href="/docs" prefetch title="Documentation & API Reference" aria-label="Documentation & API Reference"
+          <Link href="/docs" prefetch title={t('docsTitle')} aria-label={t('docsTitle')}
             className="h-full px-3 flex items-center gap-1.5 bg-[var(--gold-primary)]/10 text-[var(--gold-primary)]/80 hover:text-[var(--gold-primary)] hover:bg-[var(--gold-primary)]/25 border-r border-white/[0.04] transition-all duration-200"
           >
             <DocsIcon />
-            <span className="text-[9px] font-bold tracking-[0.15em] uppercase">Docs</span>
+            <span className="text-[9px] font-bold tracking-[0.15em] uppercase">{t('docs')}</span>
           </Link>
         </div>
 
@@ -188,7 +210,7 @@ export default function GlobalStatusBar() {
           {/* Status indicator */}
           <div className="h-full px-3 flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-[#00E676] animate-pulse" />
-            <span className="text-[#00E676]/70 text-[9px] tracking-[0.2em]">ONLINE</span>
+            <span className="text-[#00E676]/70 text-[9px] tracking-[0.2em]">{t('online')}</span>
           </div>
         </div>
       </div>
@@ -199,15 +221,15 @@ export default function GlobalStatusBar() {
           <div className="bg-black/90 backdrop-blur-xl border border-white/[0.08] rounded-lg px-4 py-3 text-[11px] font-mono whitespace-nowrap shadow-2xl">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-[11px]">🔴</span>
-              <span className="font-bold text-[#FF5722]">Magnitude {hoveredQuake.magnitude.toFixed(1)}</span>
+              <span className="font-bold text-[#FF5722]">{t('magnitude', { m: hoveredQuake.magnitude.toFixed(1) })}</span>
               <span className="text-white/30 text-[9px] bg-white/5 px-1.5 py-0.5 rounded">USGS</span>
             </div>
             <div className="text-[10px] text-white font-bold mb-2">
               {hoveredQuake.place}
             </div>
             <div className="flex flex-col gap-1 text-[10px]">
-              <div className="text-white/50"><span className="text-white/30">Depth:</span> {hoveredQuake.depth} km</div>
-              <div className="text-white/50 mt-1"><span className="text-white/30">Time:</span> {new Date(hoveredQuake.time).toLocaleString()}</div>
+              <div className="text-white/50"><span className="text-white/30">{t('depth')}</span> {hoveredQuake.depth} km</div>
+              <div className="text-white/50 mt-1"><span className="text-white/30">{t('time')}</span> {new Date(hoveredQuake.time).toLocaleString(localeOf(lang))}</div>
             </div>
           </div>
         </div>

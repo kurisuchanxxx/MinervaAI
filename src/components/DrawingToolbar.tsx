@@ -10,6 +10,7 @@ import { formatAgo as watchAgo, type WatchEvent } from '@/lib/watch';
 import { contentsToCSV, contentsToGeoJSON, downloadFile } from '@/lib/aoi-export';
 import { FileDown, Table } from 'lucide-react';
 import { Radar, LogIn, LogOut } from 'lucide-react';
+import { defineMessages, useT } from '@/lib/i18n';
 
 
 interface DrawingToolbarProps {
@@ -73,36 +74,134 @@ export function getNextColor(existing: DrawnShape[]): string {
   return POLYGON_COLORS[existing.length % POLYGON_COLORS.length];
 }
 
-function formatRelativeTime(ms: number) {
+const MESSAGES = defineMessages({
+  en: {
+    justNow: 'just now',
+    minsAgo: '{n}m ago',
+    hoursAgo: '{n}h ago',
+    daysAgo: '{n}d ago',
+    modePolygon: 'AREA',
+    modeRectangle: 'BOX',
+    modeCircle: 'RADIUS',
+    modeLine: 'PATH',
+    blurbPolygon: 'Any shape, corner by corner',
+    blurbRectangle: 'Two clicks, opposite corners',
+    blurbCircle: 'Centre, then distance out',
+    blurbLine: 'Measure a route',
+    hintPolygon: 'Click the first corner',
+    hintRectangle: 'Click one corner',
+    hintCircle: 'Click the centre',
+    hintLine: 'Click the start point',
+    keysPolygon: 'Double-click or Enter to close · Backspace undoes · Esc cancels',
+    keysRectangle: 'Second click completes the box · Esc cancels',
+    keysCircle: 'Second click sets the radius · Esc cancels',
+    keysLine: 'Double-click or Enter to end · Backspace undoes · Esc cancels',
+    title: 'DRAWING TOOLS',
+    trackedArea: 'Tracked Area',
+    aoisPerim: 'AOIs / Perim',
+    step2: 'STEP 2 — NOW CLICK THE MAP',
+    step1: 'STEP 1 — CHOOSE A SHAPE',
+    pointOne: '{n} point',
+    pointMany: '{n} points',
+    emptyDrawing: 'Now click on the map to place your first point.',
+    emptyLine1: 'Choose a shape above, then click the map',
+    emptyLine2: 'to measure an area and see what is inside it.',
+    stopWatching: 'Stop watching this area',
+    startWatching: 'Watch for arrivals and departures',
+    copyGeoJSON: 'Copy GeoJSON',
+    delete: 'Delete',
+    contents: 'CONTENTS',
+    objectOne: 'object',
+    objectMany: 'objects',
+    nothingInside: 'Nothing tracked inside this area.',
+    moreNotListed: '+{n} more not listed',
+    watching: 'WATCHING {n}',
+    events: '{n} events',
+    baseline: 'Baseline recorded. Movement in or out will appear here.',
+    exportGeoJSON: 'EXPORT GEOJSON',
+    clear: 'CLEAR',
+  },
+  it: {
+    justNow: 'adesso',
+    minsAgo: '{n} min fa',
+    hoursAgo: '{n} h fa',
+    daysAgo: '{n} g fa',
+    modePolygon: 'AREA',
+    modeRectangle: 'RIQUADRO',
+    modeCircle: 'RAGGIO',
+    modeLine: 'PERCORSO',
+    blurbPolygon: 'Qualsiasi forma, angolo per angolo',
+    blurbRectangle: 'Due clic, angoli opposti',
+    blurbCircle: 'Centro, poi la distanza',
+    blurbLine: 'Misura un percorso',
+    hintPolygon: 'Clicca il primo angolo',
+    hintRectangle: 'Clicca un angolo',
+    hintCircle: 'Clicca il centro',
+    hintLine: 'Clicca il punto di partenza',
+    keysPolygon: 'Doppio clic o Invio per chiudere · Backspace toglie un punto · Esc annulla',
+    keysRectangle: 'Il secondo clic completa il riquadro · Esc annulla',
+    keysCircle: 'Il secondo clic imposta il raggio · Esc annulla',
+    keysLine: 'Doppio clic o Invio per terminare · Backspace toglie un punto · Esc annulla',
+    title: 'STRUMENTI DI DISEGNO',
+    trackedArea: 'Area monitorata',
+    aoisPerim: 'AOI / Perim',
+    step2: 'PASSO 2 — ORA CLICCA LA MAPPA',
+    step1: 'PASSO 1 — SCEGLI UNA FORMA',
+    pointOne: '{n} punto',
+    pointMany: '{n} punti',
+    emptyDrawing: 'Ora clicca sulla mappa per posizionare il primo punto.',
+    emptyLine1: 'Scegli una forma qui sopra, poi clicca la mappa',
+    emptyLine2: "per misurare un'area e vedere cosa contiene.",
+    stopWatching: 'Smetti di sorvegliare questa area',
+    startWatching: 'Sorveglia arrivi e partenze',
+    copyGeoJSON: 'Copia GeoJSON',
+    delete: 'Elimina',
+    contents: 'CONTENUTO',
+    objectOne: 'oggetto',
+    objectMany: 'oggetti',
+    nothingInside: "Nessun oggetto tracciato in quest'area.",
+    moreNotListed: '+{n} altri non elencati',
+    watching: 'IN SORVEGLIANZA {n}',
+    events: '{n} eventi',
+    baseline: 'Situazione iniziale registrata. Gli ingressi e le uscite appariranno qui.',
+    exportGeoJSON: 'ESPORTA GEOJSON',
+    clear: 'CANCELLA',
+  },
+});
+
+type MessageKey = keyof typeof MESSAGES.en;
+type Translate = (key: MessageKey, vars?: Record<string, string | number>) => string;
+
+function formatRelativeTime(ms: number, t: Translate) {
   const diff = Date.now() - ms;
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return t('justNow');
+  if (mins < 60) return t('minsAgo', { n: mins });
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
+  if (hours < 24) return t('hoursAgo', { n: hours });
+  return t('daysAgo', { n: Math.floor(hours / 24) });
 }
 
 const MODES = [
-  { id: 'polygon' as const,   label: 'AREA',   Icon: Pentagon, blurb: 'Any shape, corner by corner' },
-  { id: 'rectangle' as const, label: 'BOX',    Icon: Square,   blurb: 'Two clicks, opposite corners' },
-  { id: 'circle' as const,    label: 'RADIUS', Icon: Circle,   blurb: 'Centre, then distance out' },
-  { id: 'line' as const,      label: 'PATH',   Icon: Spline,   blurb: 'Measure a route' },
+  { id: 'polygon' as const,   label: 'modePolygon' as const,   Icon: Pentagon, blurb: 'blurbPolygon' as const },
+  { id: 'rectangle' as const, label: 'modeRectangle' as const, Icon: Square,   blurb: 'blurbRectangle' as const },
+  { id: 'circle' as const,    label: 'modeCircle' as const,    Icon: Circle,   blurb: 'blurbCircle' as const },
+  { id: 'line' as const,      label: 'modeLine' as const,      Icon: Spline,   blurb: 'blurbLine' as const },
 ];
 
-const MODE_HINT: Record<DrawMode, string> = {
-  polygon: 'Click the first corner',
-  rectangle: 'Click one corner',
-  circle: 'Click the centre',
-  line: 'Click the start point',
+const MODE_HINT: Record<DrawMode, MessageKey> = {
+  polygon: 'hintPolygon',
+  rectangle: 'hintRectangle',
+  circle: 'hintCircle',
+  line: 'hintLine',
 };
 
 // Spelling the keys out matters: nobody guesses that Backspace undoes a vertex.
-const KEY_HINT: Record<DrawMode, string> = {
-  polygon: 'Double-click or Enter to close · Backspace undoes · Esc cancels',
-  rectangle: 'Second click completes the box · Esc cancels',
-  circle: 'Second click sets the radius · Esc cancels',
-  line: 'Double-click or Enter to end · Backspace undoes · Esc cancels',
+const KEY_HINT: Record<DrawMode, MessageKey> = {
+  polygon: 'keysPolygon',
+  rectangle: 'keysRectangle',
+  circle: 'keysCircle',
+  line: 'keysLine',
 };
 
 export default function DrawingToolbar({
@@ -111,6 +210,7 @@ export default function DrawingToolbar({
   data, onLocateEntity, watched, onToggleWatch, watchEvents = [],
   onRenamePolygon,
 }: DrawingToolbarProps) {
+  const t = useT(MESSAGES);
   const [editingName, setEditingName] = useState<string | null>(null);
   const [nameValue, setNameValue] = useState('');
   const [copied, setCopied] = useState<string | null>(null);
@@ -171,17 +271,17 @@ export default function DrawingToolbar({
         <div className="px-4 py-3 border-b border-white/[0.06]">
           <div className="flex items-center gap-2 mb-2">
             <Pentagon className="w-3.5 h-3.5 text-[var(--cyan-primary)]" />
-            <span className="text-[12px] font-mono tracking-[0.2em] text-white/90 font-bold">DRAWING TOOLS</span>
+            <span className="text-[12px] font-mono tracking-[0.2em] text-white/90 font-bold">{t('title')}</span>
           </div>
           
           <div className="flex items-center justify-between text-[10px] font-mono text-white/50 bg-white/5 rounded px-2 py-1.5 border border-white/[0.04]">
             <div className="flex flex-col">
-              <span className="text-[10px] tracking-wider mb-0.5 uppercase">Tracked Area</span>
+              <span className="text-[10px] tracking-wider mb-0.5 uppercase">{t('trackedArea')}</span>
               <span className="text-[12px] text-[var(--cyan-primary)] font-bold">{totalArea.toFixed(1)} km²</span>
             </div>
             <div className="w-[1px] h-6 bg-white/10" />
             <div className="flex flex-col text-right">
-              <span className="text-[10px] tracking-wider mb-0.5 uppercase">AOIs / Perim</span>
+              <span className="text-[10px] tracking-wider mb-0.5 uppercase">{t('aoisPerim')}</span>
               <span className="text-[12px] text-white/80">{polygons.length} / {totalPerim.toFixed(1)}km</span>
             </div>
           </div>
@@ -193,7 +293,7 @@ export default function DrawingToolbar({
               without it, nothing tells you a mode must be picked before the map
               will respond to a click. */}
           <p className="text-[10px] font-mono tracking-[0.18em] text-white/40 mb-2">
-            {drawMode ? 'STEP 2 — NOW CLICK THE MAP' : 'STEP 1 — CHOOSE A SHAPE'}
+            {drawMode ? t('step2') : t('step1')}
           </p>
           <div className="grid grid-cols-2 gap-1.5">
             {MODES.map(m => {
@@ -211,12 +311,12 @@ export default function DrawingToolbar({
                   <m.Icon className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${on ? 'text-[var(--cyan-primary)]' : 'text-white/60'}`} />
                   <span className="min-w-0">
                     <span className={`block text-[11px] font-mono tracking-wider ${on ? 'text-[var(--cyan-primary)]' : 'text-white/80'}`}>
-                      {m.label}
+                      {t(m.label)}
                     </span>
                     {/* The description was a tooltip, which is invisible to
                         anyone who does not already know to hover. */}
                     <span className="block text-[10px] font-mono text-white/40 leading-tight mt-0.5">
-                      {m.blurb}
+                      {t(m.blurb)}
                     </span>
                   </span>
                 </button>
@@ -232,8 +332,8 @@ export default function DrawingToolbar({
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--cyan-primary)] animate-pulse flex-shrink-0" />
                 <span className="text-[10px] font-mono text-[var(--cyan-primary)] tracking-wider flex-1">
                   {progress
-                    ? `${progress.vertices} point${progress.vertices === 1 ? '' : 's'}`
-                    : MODE_HINT[drawMode]}
+                    ? t(progress.vertices === 1 ? 'pointOne' : 'pointMany', { n: progress.vertices })
+                    : t(MODE_HINT[drawMode])}
                 </span>
                 {progress && progress.radiusKm != null && progress.radiusKm > 0 && (
                   <span className="text-[10px] font-mono text-white tabular-nums">r {formatDistance(progress.radiusKm)}</span>
@@ -246,7 +346,7 @@ export default function DrawingToolbar({
                 )}
               </div>
               <p className="text-[10px] font-mono text-white/40 mt-1 leading-relaxed">
-                {KEY_HINT[drawMode]}
+                {t(KEY_HINT[drawMode])}
               </p>
             </div>
           )}
@@ -267,11 +367,11 @@ export default function DrawingToolbar({
                     An empty state should say what to do next. */}
                 {drawMode ? (
                   <p className="text-[11px] font-mono text-[var(--cyan-primary)]/70 tracking-wider leading-relaxed">
-                    Now click on the map to place your first point.
+                    {t('emptyDrawing')}
                   </p>
                 ) : (
                   <p className="text-[11px] font-mono text-white/35 tracking-wider leading-relaxed">
-                    Choose a shape above, then click the map<br />to measure an area and see what is inside it.
+                    {t('emptyLine1')}<br />{t('emptyLine2')}
                   </p>
                 )}
               </motion.div>
@@ -322,7 +422,7 @@ export default function DrawingToolbar({
                       {onToggleWatch && polygon.geojson.geometry.type === 'Polygon' && (
                         <button
                           onClick={(e) => { e.stopPropagation(); onToggleWatch(polygon.id); }}
-                          title={watched?.has(polygon.id) ? 'Stop watching this area' : 'Watch for arrivals and departures'}
+                          title={watched?.has(polygon.id) ? t('stopWatching') : t('startWatching')}
                           className={`p-1.5 rounded transition ${
                             watched?.has(polygon.id)
                               ? 'bg-[var(--alert-green)]/20 text-[var(--alert-green)]'
@@ -332,10 +432,10 @@ export default function DrawingToolbar({
                           <Radar className={`w-3 h-3 ${watched?.has(polygon.id) ? 'animate-pulse' : ''}`} />
                         </button>
                       )}
-                      <button onClick={(e) => { e.stopPropagation(); handleCopy(polygon); }} className="p-1.5 rounded bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition" title="Copy GeoJSON">
+                      <button onClick={(e) => { e.stopPropagation(); handleCopy(polygon); }} className="p-1.5 rounded bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition" title={t('copyGeoJSON')}>
                         {copied === polygon.id ? <Check className="w-3 h-3 text-[var(--alert-green)]" /> : <Copy className="w-3 h-3" />}
                       </button>
-                      <button onClick={(e) => { e.stopPropagation(); onDeletePolygon(polygon.id); }} className="p-1.5 rounded bg-[#FF3D57]/10 hover:bg-[#FF3D57]/20 text-[#FF3D57]/60 hover:text-[#FF3D57] transition" title="Delete">
+                      <button onClick={(e) => { e.stopPropagation(); onDeletePolygon(polygon.id); }} className="p-1.5 rounded bg-[#FF3D57]/10 hover:bg-[#FF3D57]/20 text-[#FF3D57]/60 hover:text-[#FF3D57] transition" title={t('delete')}>
                         <Trash2 className="w-3 h-3" />
                       </button>
                     </div>
@@ -350,7 +450,7 @@ export default function DrawingToolbar({
                     </div>
                     <span className="flex items-center gap-1 text-[10px] text-white/30">
                       <Clock className="w-2 h-2" />
-                      {formatRelativeTime(polygon.createdAt)}
+                      {formatRelativeTime(polygon.createdAt, t)}
                     </span>
                   </div>
 
@@ -363,12 +463,12 @@ export default function DrawingToolbar({
                     return (
                       <div className="mt-2 pt-2 border-t border-white/[0.06]">
                         <div className="flex items-baseline gap-2 mb-1.5">
-                          <span className="text-[10px] font-mono tracking-[0.2em] text-white/40">CONTENTS</span>
+                          <span className="text-[10px] font-mono tracking-[0.2em] text-white/40">{t('contents')}</span>
                           <span className="text-[11px] font-mono text-white tabular-nums">{report.total.toLocaleString()}</span>
-                          <span className="text-[10px] font-mono text-white/30">object{report.total === 1 ? "" : "s"}</span>
+                          <span className="text-[10px] font-mono text-white/30">{report.total === 1 ? t('objectOne') : t('objectMany')}</span>
                         </div>
                         {report.total === 0 && (
-                          <p className="text-[10px] font-mono text-white/30 pb-1">Nothing tracked inside this area.</p>
+                          <p className="text-[10px] font-mono text-white/30 pb-1">{t('nothingInside')}</p>
                         )}
                         {report.groups.map(g => (
                           <div key={g.key} className="mb-1.5">
@@ -394,7 +494,7 @@ export default function DrawingToolbar({
                                 ))}
                                 {g.count > MAX_ITEMS_PER_GROUP && (
                                   <p className="text-[10px] font-mono text-white/25 px-1 py-0.5">
-                                    +{(g.count - MAX_ITEMS_PER_GROUP).toLocaleString()} more not listed
+                                    {t('moreNotListed', { n: (g.count - MAX_ITEMS_PER_GROUP).toLocaleString() })}
                                   </p>
                                 )}
                               </div>
@@ -445,14 +545,14 @@ export default function DrawingToolbar({
             <div className="flex items-center gap-2 px-3 py-1.5">
               <Radar className="w-3 h-3 text-[var(--alert-green)] animate-pulse" />
               <span className="text-[10px] font-mono tracking-[0.2em] text-[var(--alert-green)] flex-1">
-                WATCHING {watched.size}
+                {t('watching', { n: watched.size })}
               </span>
-              <span className="text-[10px] font-mono text-white/30 tabular-nums">{watchEvents.length} events</span>
+              <span className="text-[10px] font-mono text-white/30 tabular-nums">{t('events', { n: watchEvents.length })}</span>
             </div>
             <div className="max-h-[120px] overflow-y-auto styled-scrollbar">
               {watchEvents.length === 0 ? (
                 <p className="px-3 pb-2 text-[10px] font-mono text-white/30">
-                  Baseline recorded. Movement in or out will appear here.
+                  {t('baseline')}
                 </p>
               ) : watchEvents.map(ev => (
                 <div key={ev.id} className="flex items-center gap-2 px-3 py-1 hover:bg-white/[0.03]">
@@ -476,14 +576,14 @@ export default function DrawingToolbar({
               className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded text-[10px] font-mono tracking-[0.2em] bg-[var(--cyan-primary)]/10 border border-[var(--cyan-primary)]/30 text-[var(--cyan-primary)]/80 hover:text-[var(--cyan-primary)] hover:bg-[var(--cyan-primary)]/20 hover:border-[var(--cyan-primary)]/50 transition"
             >
               <Download className="w-3 h-3" />
-              EXPORT GEOJSON
+              {t('exportGeoJSON')}
             </button>
             <button 
               onClick={onClearAll} 
               className="flex items-center justify-center gap-1.5 px-3 py-2 rounded text-[10px] font-mono tracking-widest bg-[#FF3D57]/10 border border-[#FF3D57]/20 text-[#FF3D57]/60 hover:text-[#FF3D57] hover:bg-[#FF3D57]/20 transition"
             >
               <Trash2 className="w-3 h-3" />
-              CLEAR
+              {t('clear')}
             </button>
           </div>
         )}

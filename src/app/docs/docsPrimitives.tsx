@@ -1,6 +1,28 @@
 'use client';
 
 import { useState } from 'react';
+import { defineMessages, useT } from '@/lib/i18n';
+
+const MESSAGES = defineMessages({
+  en: {
+    copy: 'Copy',
+    copied: 'Copied',
+    copyToClipboard: 'Copy to clipboard',
+    note: 'Note',
+    caution: 'Caution',
+    tip: 'Tip',
+    linkTo: 'Link to {title}',
+  },
+  it: {
+    copy: 'Copia',
+    copied: 'Copiato',
+    copyToClipboard: 'Copia negli appunti',
+    note: 'Nota',
+    caution: 'Attenzione',
+    tip: 'Suggerimento',
+    linkTo: 'Link a {title}',
+  },
+});
 
 /* ─────────────────────────────────────────────────────────────
    Inline code
@@ -19,6 +41,7 @@ export function Code({ children }: { children: React.ReactNode }) {
    ───────────────────────────────────────────────────────────── */
 
 export function CopyButton({ value, className = '' }: { value: string; className?: string }) {
+  const t = useT(MESSAGES);
   const [copied, setCopied] = useState(false);
 
   const copy = async () => {
@@ -34,7 +57,7 @@ export function CopyButton({ value, className = '' }: { value: string; className
   return (
     <button
       onClick={copy}
-      aria-label={copied ? 'Copied' : 'Copy to clipboard'}
+      aria-label={copied ? t('copied') : t('copyToClipboard')}
       className={`inline-flex items-center gap-1 text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-1 rounded-[5px] border transition-all duration-200 ${
         copied
           ? 'border-[var(--alert-green)]/40 bg-[var(--alert-green)]/10 text-[var(--alert-green)]'
@@ -51,7 +74,7 @@ export function CopyButton({ value, className = '' }: { value: string; className
           <path d="M5 15V5a2 2 0 0 1 2-2h10" />
         </svg>
       )}
-      {copied ? 'Copied' : 'Copy'}
+      {copied ? t('copied') : t('copy')}
     </button>
   );
 }
@@ -184,10 +207,10 @@ export function Pre({ children, label, lang = 'bash' }: { children: string; labe
    ───────────────────────────────────────────────────────────── */
 
 const CALLOUT_TONES = {
-  info: { border: 'var(--cyan-primary)', icon: 'M12 16v-4M12 8h.01', label: 'Note' },
-  warn: { border: 'var(--alert-orange)', icon: 'M12 9v4M12 17h.01', label: 'Caution' },
-  good: { border: 'var(--alert-green)', icon: 'M20 6 9 17l-5-5', label: 'Tip' },
-};
+  info: { border: 'var(--cyan-primary)', icon: 'M12 16v-4M12 8h.01', label: 'note' },
+  warn: { border: 'var(--alert-orange)', icon: 'M12 9v4M12 17h.01', label: 'caution' },
+  good: { border: 'var(--alert-green)', icon: 'M20 6 9 17l-5-5', label: 'tip' },
+} as const;
 
 export function Callout({
   tone = 'info',
@@ -199,6 +222,7 @@ export function Callout({
   children: React.ReactNode;
 }) {
   const t = CALLOUT_TONES[tone];
+  const tr = useT(MESSAGES);
   return (
     <div
       className="rounded-xl p-4 my-5 border bg-white/[0.015]"
@@ -218,7 +242,7 @@ export function Callout({
           <path d={t.icon} />
         </svg>
         <span className="text-[11px] font-mono tracking-[0.2em] uppercase" style={{ color: t.border }}>
-          {title || t.label}
+          {title || tr(t.label)}
         </span>
       </div>
       <div className="text-[12.5px] leading-[1.75] text-[var(--text-secondary)]">{children}</div>
@@ -241,6 +265,7 @@ export function Section({
   eyebrow?: string;
   children: React.ReactNode;
 }) {
+  const t = useT(MESSAGES);
   return (
     <section id={id} className="scroll-mt-28 mb-20">
       {eyebrow && (
@@ -252,7 +277,7 @@ export function Section({
         {title}
         <a
           href={`#${id}`}
-          aria-label={`Link to ${title}`}
+          aria-label={t('linkTo', { title })}
           className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity text-[var(--gold-primary)]/50 hover:text-[var(--gold-primary)]"
         >
           <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

@@ -7,6 +7,118 @@ import {
   LocateFixed, Building2, Landmark, Globe2, Signpost, Home, Crosshair, Clock,
   Plus, Trash2, SlidersHorizontal, Mountain, Navigation, Play,
 } from 'lucide-react';
+import { defineMessages, useT, useLang, translate, localeOf, type Lang } from '@/lib/i18n';
+
+const MESSAGES = defineMessages({
+  en: {
+    modeDrive: 'Drive',
+    modeWalk: 'Walk',
+    modeBike: 'Bike',
+    hr: 'hr',
+    coordinates: 'Coordinates',
+    useMyLocation: 'Use my location',
+    yourLocation: 'Your location',
+    livePosition: 'Live position',
+    noRoute: 'No route found',
+    routingUnreachable: 'Routing service unreachable',
+    noGeolocation: 'This browser has no geolocation',
+    permissionDenied: 'Location permission denied — needs HTTPS or localhost',
+    myLocation: 'My location',
+    near: 'Near {city}',
+    approximateLocation: 'Approximate location',
+    approximateNetwork: 'Approximate — from network location',
+    locationFailed: 'Could not determine your location',
+    title: 'Route',
+    steps: '{n} STEPS',
+    plotting: 'PLOTTING',
+    standby: 'STANDBY',
+    stopTracking: 'Stop live tracking',
+    startTracking: 'Track my location live',
+    stopFollowing: 'Stop following',
+    startFollowing: 'Keep the map centred on me',
+    close: 'Close directions',
+    chooseStart: 'Choose starting point',
+    stop: 'Stop {n}',
+    removeStop: 'Remove stop {n}',
+    chooseDestination: 'Choose destination',
+    swap: 'Swap origin and destination',
+    travelMode: 'Travel mode',
+    addStop: 'Add a stop',
+    routeOptions: 'Route options',
+    avoidTolls: 'Avoid tolls',
+    avoidHighways: 'Avoid highways',
+    avoidFerries: 'Avoid ferries',
+    tryDifferent: 'Try a different point, or switch travel mode.',
+    calculating: 'Calculating…',
+    acceptedInput: 'Accepted input',
+    setStartDest: 'Set a start and a destination to plot a route.',
+    nextTurn: 'Next turn',
+    via: 'via {road}',
+    toll: 'Toll',
+    motorway: 'Motorway',
+    ferry: 'Ferry',
+    elevation: 'Elevation',
+    yourDestination: 'your destination',
+    startNavigation: 'Start navigation',
+    fastest: 'Fastest',
+    routingVia: 'Routing via {provider} · OpenStreetMap',
+  },
+  it: {
+    modeDrive: 'In auto',
+    modeWalk: 'A piedi',
+    modeBike: 'In bici',
+    hr: 'h',
+    coordinates: 'Coordinate',
+    useMyLocation: 'Usa la mia posizione',
+    yourLocation: 'La tua posizione',
+    livePosition: 'Posizione in tempo reale',
+    noRoute: 'Nessun percorso trovato',
+    routingUnreachable: 'Servizio di calcolo percorso non raggiungibile',
+    noGeolocation: 'Questo browser non supporta la geolocalizzazione',
+    permissionDenied: 'Permesso di posizione negato — serve HTTPS o localhost',
+    myLocation: 'La mia posizione',
+    near: 'Vicino a {city}',
+    approximateLocation: 'Posizione approssimativa',
+    approximateNetwork: 'Approssimativa — dalla posizione di rete',
+    locationFailed: 'Impossibile determinare la tua posizione',
+    title: 'Percorso',
+    steps: '{n} MANOVRE',
+    plotting: 'CALCOLO',
+    standby: 'IN ATTESA',
+    stopTracking: 'Interrompi tracciamento live',
+    startTracking: 'Traccia la mia posizione in tempo reale',
+    stopFollowing: 'Smetti di seguire',
+    startFollowing: 'Mantieni la mappa centrata su di me',
+    close: 'Chiudi indicazioni',
+    chooseStart: 'Scegli il punto di partenza',
+    stop: 'Tappa {n}',
+    removeStop: 'Rimuovi tappa {n}',
+    chooseDestination: 'Scegli la destinazione',
+    swap: 'Inverti partenza e destinazione',
+    travelMode: 'Modalità di viaggio',
+    addStop: 'Aggiungi una tappa',
+    routeOptions: 'Opzioni percorso',
+    avoidTolls: 'Evita pedaggi',
+    avoidHighways: 'Evita autostrade',
+    avoidFerries: 'Evita traghetti',
+    tryDifferent: 'Prova un altro punto o cambia modalità di viaggio.',
+    calculating: 'Calcolo in corso…',
+    acceptedInput: 'Formati accettati',
+    setStartDest: 'Imposta partenza e destinazione per tracciare un percorso.',
+    nextTurn: 'Prossima svolta',
+    via: 'tramite {road}',
+    toll: 'Pedaggio',
+    motorway: 'Autostrada',
+    ferry: 'Traghetto',
+    elevation: 'Altimetria',
+    yourDestination: 'la tua destinazione',
+    startNavigation: 'Avvia navigazione',
+    fastest: 'Più veloce',
+    routingVia: 'Calcolo tramite {provider} · OpenStreetMap',
+  },
+});
+
+const AVOID_KEYS = { tolls: 'avoidTolls', highways: 'avoidHighways', ferries: 'avoidFerries' } as const;
 
 /* ═══════════════════════════════════════════════════════════════
    MinervaAI — Route Planner
@@ -84,14 +196,15 @@ interface DirectionsBarProps {
 }
 
 const MODES = [
-  { id: 'auto', label: 'Drive', Icon: Car },
-  { id: 'pedestrian', label: 'Walk', Icon: Footprints },
-  { id: 'bicycle', label: 'Bike', Icon: Bike },
+  { id: 'auto', label: 'modeDrive', Icon: Car },
+  { id: 'pedestrian', label: 'modeWalk', Icon: Footprints },
+  { id: 'bicycle', label: 'modeBike', Icon: Bike },
 ] as const;
 
-export function formatDistance(m: number): string {
+export function formatDistance(m: number, lang: Lang = 'en'): string {
   if (m < 1000) return `${Math.round(m)} m`;
-  return `${(m / 1000).toFixed(m < 10000 ? 1 : 0)} km`;
+  const km = (m / 1000).toFixed(m < 10000 ? 1 : 0);
+  return `${lang === 'it' ? km.replace('.', ',') : km} km`;
 }
 
 /** Metres between two WGS84 points. */
@@ -166,9 +279,9 @@ export function elevationPath(
 }
 
 /** Wall-clock arrival time for a trip of `seconds` starting now. */
-export function arrivalTime(seconds: number, now: Date = new Date()): string {
+export function arrivalTime(seconds: number, now: Date = new Date(), lang?: Lang): string {
   const at = new Date(now.getTime() + seconds * 1000);
-  return at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return at.toLocaleTimeString(lang ? localeOf(lang) : [], { hour: '2-digit', minute: '2-digit' });
 }
 
 /**
@@ -194,12 +307,13 @@ export function segmentBetween(
   return coords.slice(Math.min(a, b), Math.max(a, b) + 1);
 }
 
-export function formatDuration(s: number): string {
+export function formatDuration(s: number, lang: Lang = 'en'): string {
   const total = Math.max(1, Math.round(s / 60));
   if (total < 60) return `${total} min`;
   const h = Math.floor(total / 60);
   const m = total % 60;
-  return m ? `${h} hr ${m} min` : `${h} hr`;
+  const hr = translate(MESSAGES, lang, 'hr');
+  return m ? `${h} ${hr} ${m} min` : `${h} ${hr}`;
 }
 
 /** The road the route spends most of its distance on — the "via" line. */
@@ -258,6 +372,7 @@ function PlaceInput({
   /** When a live fix exists, both fields offer it as the first choice. */
   liveFix?: { lat: number; lng: number } | null;
 }) {
+  const t = useT(MESSAGES);
   const [results, setResults] = useState<Place[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
@@ -284,7 +399,7 @@ function PlaceInput({
       const lat = parseFloat(coord[1]);
       const lng = parseFloat(coord[2]);
       if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-        setResults([{ label: `${lat.toFixed(5)}, ${lng.toFixed(5)}`, lat, lng, kind: 'coordinate', context: 'Coordinates' }]);
+        setResults([{ label: `${lat.toFixed(5)}, ${lng.toFixed(5)}`, lat, lng, kind: 'coordinate', context: t('coordinates') }]);
         setOpen(true);
         return;
       }
@@ -318,7 +433,7 @@ function PlaceInput({
       }
       if (!ctrl.signal.aborted) setLoading(false);
     }, 280);
-  }, [onChange, biasLat, biasLng]);
+  }, [onChange, biasLat, biasLng, t]);
 
   const choose = (p: Place) => {
     onChange(p.label);
@@ -362,8 +477,8 @@ function PlaceInput({
           type="button"
           onClick={onLocate}
           disabled={locating}
-          title="Use my location"
-          aria-label="Use my location"
+          title={t('useMyLocation')}
+          aria-label={t('useMyLocation')}
           className="absolute right-0 top-1/2 -translate-y-1/2 p-1.5 rounded text-[var(--text-muted)]
                      hover:text-[var(--alert-green)] hover:bg-[rgba(0,230,118,0.08)] transition-colors disabled:opacity-50"
         >
@@ -379,14 +494,14 @@ function PlaceInput({
         >
           {liveFix && (
             <button
-              onClick={() => choose({ label: 'Your location', lat: liveFix.lat, lng: liveFix.lng, kind: 'current', context: 'Live position' })}
+              onClick={() => choose({ label: t('yourLocation'), lat: liveFix.lat, lng: liveFix.lng, kind: 'current', context: t('livePosition') })}
               className="w-full text-left px-2.5 py-2 flex items-start gap-2 transition-colors
                          border-b border-[var(--border-secondary)] hover:bg-[rgba(0,230,118,0.08)]"
             >
               <KindIcon kind="current" />
               <span className="min-w-0">
-                <span className="block text-[11px] text-[var(--alert-green)]">Your location</span>
-                <span className="block text-[10px] text-[var(--text-muted)]">Live position</span>
+                <span className="block text-[11px] text-[var(--alert-green)]">{t('yourLocation')}</span>
+                <span className="block text-[10px] text-[var(--text-muted)]">{t('livePosition')}</span>
               </span>
             </button>
           )}
@@ -417,6 +532,8 @@ function PlaceInput({
 }
 
 export default function DirectionsBar({ onRoute, onLocate, onClose, center = null, onLiveLocation, onActiveSegment, onFollowChange, onStartNavigation }: DirectionsBarProps) {
+  const t = useT(MESSAGES);
+  const { lang } = useLang();
   const [fromText, setFromText] = useState('');
   const [toText, setToText] = useState('');
   const [from, setFrom] = useState<Place | null>(null);
@@ -461,7 +578,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
         setRoute(null);
         setRoutes([]);
         onRoute(null);
-        setError(data.error || 'No route found');
+        setError(data.error || t('noRoute'));
       } else {
         const all: RouteResult[] = data.routes?.length ? data.routes : [data];
         setRoutes(all);
@@ -473,10 +590,10 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
       setRoute(null);
       setRoutes([]);
       onRoute(null);
-      setError('Routing service unreachable');
+      setError(t('routingUnreachable'));
     }
     setLoading(false);
-  }, [onRoute]);
+  }, [onRoute, t]);
 
   /** Current intermediate stops that actually resolved to a place. */
   const stops = useCallback(
@@ -498,7 +615,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
     }
 
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setLocateError('This browser has no geolocation');
+      setLocateError(t('noGeolocation'));
       return;
     }
 
@@ -516,13 +633,13 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
         setTracking(true);
       },
       () => {
-        setLocateError('Location permission denied — needs HTTPS or localhost');
+        setLocateError(t('permissionDenied'));
         setTracking(false);
       },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
     );
     setTracking(true);
-  }, [tracking, onLiveLocation, onFollowChange]);
+  }, [tracking, onLiveLocation, onFollowChange, t]);
 
   useEffect(() => () => {
     if (watchId.current !== null) navigator.geolocation.clearWatch(watchId.current);
@@ -558,7 +675,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
 
     if (browser) {
       const { latitude, longitude } = browser.coords;
-      apply(latitude, longitude, 'My location');
+      apply(latitude, longitude, t('myLocation'));
       setLocating(false);
       return;
     }
@@ -567,16 +684,16 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
       const res = await fetch('/api/geo');
       const d = await res.json();
       if (d?.lat && d?.lon) {
-        apply(d.lat, d.lon, d.city ? `Near ${d.city}` : 'Approximate location');
-        setLocateError('Approximate — from network location');
+        apply(d.lat, d.lon, d.city ? t('near', { city: d.city }) : t('approximateLocation'));
+        setLocateError(t('approximateNetwork'));
       } else {
-        setLocateError('Could not determine your location');
+        setLocateError(t('locationFailed'));
       }
     } catch {
-      setLocateError('Could not determine your location');
+      setLocateError(t('locationFailed'));
     }
     setLocating(false);
-  }, [to, mode, runRoute, onLocate, stops, avoid]);
+  }, [to, mode, runRoute, onLocate, stops, avoid, t]);
 
   const pickFrom = (p: Place) => { setFrom(p); if (to) runRoute(p, to, mode, stops(), avoid); };
   const pickTo = (p: Place) => { setTo(p); if (from) runRoute(from, p, mode, stops(), avoid); };
@@ -636,20 +753,20 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
           style={{ background: 'var(--gold-primary)', boxShadow: '0 0 8px rgba(var(--gold-rgb),0.6)' }}
         />
         <Route className="w-3.5 h-3.5 text-[var(--gold-primary)]" />
-        <h2 className="instrument-title flex-1">Route</h2>
+        <h2 className="instrument-title flex-1">{t('title')}</h2>
 
         {/* State at a glance: standby until both ends are set, then the leg. */}
         <span
           className="instrument-chip"
           style={{ color: route ? 'var(--alert-green)' : 'var(--text-muted)' }}
         >
-          {route ? `${route.steps.length} STEPS` : ready ? 'PLOTTING' : 'STANDBY'}
+          {route ? t('steps', { n: route.steps.length }) : ready ? t('plotting') : t('standby')}
         </span>
 
         <button
           onClick={toggleTracking}
           aria-pressed={tracking}
-          title={tracking ? 'Stop live tracking' : 'Track my location live'}
+          title={tracking ? t('stopTracking') : t('startTracking')}
           className={`p-1.5 rounded transition-colors ${
             tracking
               ? 'text-[#4285F4] bg-[rgba(66,133,244,0.14)]'
@@ -663,7 +780,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
           <button
             onClick={() => { const n = !follow; setFollow(n); onFollowChange?.(n); }}
             aria-pressed={follow}
-            title={follow ? 'Stop following' : 'Keep the map centred on me'}
+            title={follow ? t('stopFollowing') : t('startFollowing')}
             className={`p-1.5 rounded transition-colors ${
               follow
                 ? 'text-[var(--gold-primary)] bg-[rgba(var(--gold-rgb),0.14)]'
@@ -676,7 +793,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
         {onClose && (
           <button
             onClick={onClose}
-            aria-label="Close directions"
+            aria-label={t('close')}
             className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors -mr-1 p-1.5"
           >
             <X className="w-3.5 h-3.5" />
@@ -706,7 +823,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
         <div className="flex-1 min-w-0 flex flex-col divide-y divide-[var(--border-secondary)]">
           <PlaceInput
             value={fromText} onChange={setFromText} onPick={pickFrom}
-            placeholder="Choose starting point" autoFocus
+            placeholder={t('chooseStart')} autoFocus
             biasLat={center?.lat} biasLng={center?.lng}
             onLocate={useMyLocation} locating={locating} liveFix={live}
           />
@@ -716,12 +833,12 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
                 value={v.text}
                 onChange={(t) => setVias((prev) => prev.map((x, j) => (j === i ? { ...x, text: t } : x)))}
                 onPick={(p) => pickVia(i, p)}
-                placeholder={`Stop ${i + 1}`}
+                placeholder={t('stop', { n: i + 1 })}
                 biasLat={center?.lat} biasLng={center?.lng} liveFix={live}
               />
               <button
                 onClick={() => removeVia(i)}
-                aria-label={`Remove stop ${i + 1}`}
+                aria-label={t('removeStop', { n: i + 1 })}
                 className="p-1 text-[var(--text-muted)] hover:text-[var(--alert-red)] transition-colors flex-shrink-0"
               >
                 <Trash2 className="w-3 h-3" />
@@ -730,14 +847,14 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
           ))}
           <PlaceInput
             value={toText} onChange={setToText} onPick={pickTo}
-            placeholder="Choose destination"
+            placeholder={t('chooseDestination')}
             biasLat={center?.lat} biasLng={center?.lng} liveFix={live}
           />
         </div>
 
         <button
           onClick={swap}
-          aria-label="Swap origin and destination"
+          aria-label={t('swap')}
           className="self-center p-1.5 rounded-md text-[var(--text-muted)] hover:text-[var(--gold-primary)]
                      hover:bg-[rgba(var(--gold-rgb),0.08)] transition-colors flex-shrink-0"
         >
@@ -749,7 +866,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
       <div className="px-3 pb-2.5 flex items-center gap-1.5">
         <div
           role="tablist"
-          aria-label="Travel mode"
+          aria-label={t('travelMode')}
           className="flex-1 flex p-0.5 rounded-lg border border-[var(--border-secondary)] bg-[rgba(0,0,0,0.35)]"
         >
           {MODES.map(({ id, label, Icon }) => {
@@ -768,7 +885,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
                 style={on ? { fontFamily: 'var(--font-hud)' } : undefined}
               >
                 <Icon className="w-3.5 h-3.5" />
-                {label}
+                {t(label)}
                 {/* A lit underline on the selected mode — the fill alone is
                     subtle enough to miss against a bright basemap. */}
                 {on && (
@@ -785,8 +902,8 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
 
         <button
           onClick={() => setVias((v) => [...v, { place: null, text: '' }])}
-          title="Add a stop"
-          aria-label="Add a stop"
+          title={t('addStop')}
+          aria-label={t('addStop')}
           className="p-1.5 rounded-md text-[var(--text-muted)] hover:text-[var(--cyan-primary)]
                      hover:bg-[rgba(var(--cyan-rgb),0.08)] transition-colors flex-shrink-0"
         >
@@ -795,8 +912,8 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
         <button
           onClick={() => setShowOptions((o) => !o)}
           aria-pressed={showOptions}
-          title="Route options"
-          aria-label="Route options"
+          title={t('routeOptions')}
+          aria-label={t('routeOptions')}
           className={`p-1.5 rounded-md transition-colors flex-shrink-0 ${
             showOptions || avoid.tolls || avoid.highways || avoid.ferries
               ? 'text-[var(--gold-primary)] bg-[rgba(var(--gold-rgb),0.1)]'
@@ -820,7 +937,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
                   : 'border-[var(--border-secondary)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
               }`}
             >
-              Avoid {k}
+              {t(AVOID_KEYS[k])}
             </button>
           ))}
         </div>
@@ -851,7 +968,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
           <div className="px-3 py-4 text-center">
             <p className="text-[11px] text-[var(--alert-red)]">{error}</p>
             <p className="text-[10px] text-[var(--text-muted)] mt-1">
-              Try a different point, or switch travel mode.
+              {t('tryDifferent')}
             </p>
           </div>
         )}
@@ -859,10 +976,10 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
         {!loading && !error && !route && (
           <div className="px-3 py-4">
             {ready ? (
-              <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">Calculating…</p>
+              <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">{t('calculating')}</p>
             ) : (
               <>
-                <p className="hud-label mb-2">Accepted input</p>
+                <p className="hud-label mb-2">{t('acceptedInput')}</p>
                 {/* Showing the formats beats describing them: the sample is the
                     documentation, and it is scannable at a glance. */}
                 <div className="flex flex-wrap gap-1.5">
@@ -871,7 +988,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
                   <span className="instrument-sample">51.5074,-0.1278</span>
                 </div>
                 <p className="mt-2.5 text-[11px] text-[var(--text-muted)] leading-relaxed">
-                  Set a start and a destination to plot a route.
+                  {t('setStartDest')}
                 </p>
               </>
             )}
@@ -884,7 +1001,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
               <div className="px-3 py-2.5 border-b border-[var(--border-secondary)] bg-[rgba(66,133,244,0.07)]">
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <Navigation className="w-2.5 h-2.5 text-[#4285F4]" />
-                  <span className="text-[9px] uppercase tracking-[0.15em] text-[#4285F4]">Next turn</span>
+                  <span className="text-[9px] uppercase tracking-[0.15em] text-[#4285F4]">{t('nextTurn')}</span>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <span className="mt-0.5 flex-shrink-0"><StepIcon type={guidance.step.type} /></span>
@@ -892,7 +1009,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
                     {guidance.step.instruction}
                   </span>
                   <span className="text-[12px] text-[var(--gold-primary)] tabular-nums flex-shrink-0">
-                    {formatDistance(guidance.distance)}
+                    {formatDistance(guidance.distance, lang)}
                   </span>
                 </div>
               </div>
@@ -904,28 +1021,28 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
               <div className="flex items-baseline justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-[17px] leading-none text-[var(--gold-primary)] tabular-nums">
-                    {formatDuration(route.duration)}
+                    {formatDuration(route.duration, lang)}
                   </div>
                   {via && (
-                    <div className="text-[10px] text-[var(--text-muted)] truncate mt-1">via {via}</div>
+                    <div className="text-[10px] text-[var(--text-muted)] truncate mt-1">{t('via', { road: via })}</div>
                   )}
                 </div>
                 <div className="text-right flex-shrink-0">
                   <div className="text-[12px] text-[var(--text-secondary)] tabular-nums">
-                    {formatDistance(route.distance)}
+                    {formatDistance(route.distance, lang)}
                   </div>
                   <div className="flex items-center gap-1 justify-end text-[10px] text-[var(--text-muted)] tabular-nums mt-1">
                     <Clock className="w-2.5 h-2.5" />
-                    {arrivalTime(route.duration)}
+                    {arrivalTime(route.duration, undefined, lang)}
                   </div>
                 </div>
               </div>
 
               {(route.hasToll || route.hasHighway || route.hasFerry) && (
                 <div className="flex gap-1.5 mt-2">
-                  {route.hasToll && <span className="px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider border border-[var(--border-secondary)] text-[var(--alert-orange)]">Toll</span>}
-                  {route.hasHighway && <span className="px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider border border-[var(--border-secondary)] text-[var(--text-muted)]">Motorway</span>}
-                  {route.hasFerry && <span className="px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider border border-[var(--border-secondary)] text-[var(--cyan-primary)]">Ferry</span>}
+                  {route.hasToll && <span className="px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider border border-[var(--border-secondary)] text-[var(--alert-orange)]">{t('toll')}</span>}
+                  {route.hasHighway && <span className="px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider border border-[var(--border-secondary)] text-[var(--text-muted)]">{t('motorway')}</span>}
+                  {route.hasFerry && <span className="px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider border border-[var(--border-secondary)] text-[var(--cyan-primary)]">{t('ferry')}</span>}
                 </div>
               )}
 
@@ -933,7 +1050,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
                 <div className="mt-2.5">
                   <div className="flex items-center justify-between mb-1">
                     <span className="flex items-center gap-1 text-[9px] uppercase tracking-[0.15em] text-[var(--text-muted)]">
-                      <Mountain className="w-2.5 h-2.5" /> Elevation
+                      <Mountain className="w-2.5 h-2.5" /> {t('elevation')}
                     </span>
                     <span className="text-[10px] text-[var(--text-secondary)] tabular-nums">
                       ↑{route.ascent ?? 0} m · ↓{route.descent ?? 0} m
@@ -955,19 +1072,19 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
 
               {onStartNavigation && (
                 <button
-                  onClick={() => onStartNavigation(route, to?.label || 'your destination')}
+                  onClick={() => onStartNavigation(route, to?.label || t('yourDestination'))}
                   className="w-full mt-2.5 flex items-center justify-center gap-2 py-2 rounded-lg
                              bg-[rgba(66,133,244,0.16)] border border-[rgba(66,133,244,0.45)]
                              text-[#7BAAF7] text-[12px] tracking-wide
                              hover:bg-[rgba(66,133,244,0.24)] transition-colors"
                 >
                   <Play className="w-3.5 h-3.5" />
-                  Start navigation
+                  {t('startNavigation')}
                 </button>
               )}
 
               {routes.length > 1 && (
-                <div className="flex gap-1 mt-2.5" role="tablist" aria-label="Route options">
+                <div className="flex gap-1 mt-2.5" role="tablist" aria-label={t('routeOptions')}>
                   {routes.map((r, i) => {
                     const on = i === chosen;
                     const slower = Math.round((r.duration - routes[0].duration) / 60);
@@ -994,9 +1111,9 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
                             : 'border-[var(--border-secondary)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
                         }`}
                       >
-                        <span className="block tabular-nums">{formatDuration(r.duration)}</span>
+                        <span className="block tabular-nums">{formatDuration(r.duration, lang)}</span>
                         <span className="block text-[9px] opacity-70 tabular-nums">
-                          {i === 0 ? 'Fastest' : slower > 0 ? `+${slower} min` : formatDistance(r.distance)}
+                          {i === 0 ? t('fastest') : slower > 0 ? `+${slower} min` : formatDistance(r.distance, lang)}
                         </span>
                       </button>
                     );
@@ -1029,7 +1146,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
                     </span>
                     {s.distance > 0 && (
                       <span className="text-[10px] text-[var(--text-muted)] tabular-nums flex-shrink-0 mt-px w-12 text-right">
-                        {formatDistance(s.distance)}
+                        {formatDistance(s.distance, lang)}
                       </span>
                     )}
                   </button>
@@ -1038,7 +1155,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
             </ol>
 
             <p className="px-3 py-2 text-[9px] text-[var(--text-muted)] tracking-wider uppercase border-t border-[var(--border-secondary)]">
-              Routing via {route.provider} · OpenStreetMap
+              {t('routingVia', { provider: route.provider })}
             </p>
           </>
         )}

@@ -10,6 +10,7 @@ import {
   DollarSign, ArrowUpDown, AlertTriangle,
 } from 'lucide-react';
 import AiOverview from './AiOverview';
+import { defineMessages, useT } from '@/lib/i18n';
 
 // Canvas charting has no business in the server bundle, and it only mounts
 // once a ticker is actually opened.
@@ -28,14 +29,77 @@ interface Quote {
 
 interface MarketsPanelProps { data: any; spaceWeather?: any; }
 
+const MESSAGES = defineMessages({
+  en: {
+    indices: 'INDICES',
+    defense: 'DEFENSE',
+    energy: 'ENERGY',
+    commodities: 'COMMODITIES',
+    crypto: 'CRYPTO',
+    fx: 'FX',
+    openChart: '{name} — open chart',
+    justNow: 'just now',
+    minsAgo: '{n}m ago',
+    hoursAgo: '{n}h ago',
+    breadth: 'BREADTH',
+    ofTotal: ' of {n}',
+    spaceWeather: 'SPACE WEATHER',
+    latestFlare: 'Latest flare: {cls}',
+    sessionOpen: 'SESSION OPEN',
+    sessionClosed: 'SESSION CLOSED',
+    sortedByMove: 'Listed by biggest move',
+    sortedByFeed: 'Listed in feed order',
+    byMove: 'BY MOVE',
+    defaultOrder: 'DEFAULT',
+    feedUnavailable: '{section} FEED UNAVAILABLE — RETRYING',
+    loadingSection: 'Loading {section}...',
+    title: 'Markets & Intel',
+    live: 'Live',
+    restore: 'Restore',
+    maximize: 'Maximize',
+    collapse: 'Collapse',
+    expand: 'Expand',
+  },
+  it: {
+    indices: 'INDICI',
+    defense: 'DIFESA',
+    energy: 'ENERGIA',
+    commodities: 'MATERIE PRIME',
+    crypto: 'CRIPTO',
+    fx: 'FX',
+    openChart: '{name} — apri grafico',
+    justNow: 'adesso',
+    minsAgo: '{n}m fa',
+    hoursAgo: '{n}h fa',
+    breadth: 'AMPIEZZA',
+    ofTotal: ' su {n}',
+    spaceWeather: 'METEO SPAZIALE',
+    latestFlare: 'Ultimo brillamento: {cls}',
+    sessionOpen: 'SEDUTA APERTA',
+    sessionClosed: 'SEDUTA CHIUSA',
+    sortedByMove: 'Ordinati per variazione maggiore',
+    sortedByFeed: 'Ordine del feed',
+    byMove: 'PER VAR.',
+    defaultOrder: 'STANDARD',
+    feedUnavailable: 'FEED {section} NON DISPONIBILE — NUOVO TENTATIVO',
+    loadingSection: 'Caricamento {section}...',
+    title: 'Mercati & Intel',
+    live: 'Live',
+    restore: 'Ripristina',
+    maximize: 'Massimizza',
+    collapse: 'Comprimi',
+    expand: 'Espandi',
+  },
+});
+
 const SECTIONS = [
-  { key: 'indices', label: 'INDICES', icon: LineChart },
-  { key: 'stocks', label: 'DEFENSE', icon: Shield },
-  { key: 'oil', label: 'ENERGY', icon: Droplets },
-  { key: 'commodities', label: 'COMMODITIES', icon: Gem },
-  { key: 'crypto', label: 'CRYPTO', icon: Bitcoin },
-  { key: 'fx', label: 'FX', icon: DollarSign },
-];
+  { key: 'indices', label: 'indices', icon: LineChart },
+  { key: 'stocks', label: 'defense', icon: Shield },
+  { key: 'oil', label: 'energy', icon: Droplets },
+  { key: 'commodities', label: 'commodities', icon: Gem },
+  { key: 'crypto', label: 'crypto', icon: Bitcoin },
+  { key: 'fx', label: 'fx', icon: DollarSign },
+] as const;
 
 const GREEN = 'var(--alert-green)';
 const RED = 'var(--alert-red)';
@@ -76,11 +140,12 @@ function Sparkline({ points, up }: { points: number[]; up: boolean }) {
 }
 
 function Ticker({ quote, active, onSelect }: { quote: Quote; active: boolean; onSelect: () => void }) {
+  const t = useT(MESSAGES);
   const d = quote;
   return (
     <button
       onClick={onSelect}
-      title={`${d.name} — open chart`}
+      title={t('openChart', { name: d.name })}
       className={`w-full flex items-center justify-between gap-2 py-1.5 px-2 rounded transition-colors ${active ? 'bg-[var(--hover-accent)] border border-[var(--border-primary)]' : 'border border-transparent hover:bg-[var(--hover-accent)]'}`}>
       <div className="min-w-0 flex-1">
         <div className="text-[11px] font-mono text-[var(--text-secondary)] tracking-wide truncate">{d.name}</div>
@@ -109,6 +174,7 @@ function Ticker({ quote, active, onSelect }: { quote: Quote; active: boolean; on
 
 /** How long ago the feed was built, so a frozen panel is visibly frozen. */
 function useFeedAge(timestamp?: string): string | null {
+  const tr = useT(MESSAGES);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 30_000);
@@ -119,12 +185,13 @@ function useFeedAge(timestamp?: string): string | null {
   const ms = now - new Date(timestamp).getTime();
   if (!Number.isFinite(ms) || ms < 0) return null;
   const mins = Math.floor(ms / 60_000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  return `${Math.floor(mins / 60)}h ago`;
+  if (mins < 1) return tr('justNow');
+  if (mins < 60) return tr('minsAgo', { n: mins });
+  return tr('hoursAgo', { n: Math.floor(mins / 60) });
 }
 
 export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) {
+  const t = useT(MESSAGES);
   const [expanded, setExpanded] = useState(true);
   const [maximized, setMaximized] = useState(false);
   const [activeSection, setActiveSection] = useState('stocks');
@@ -182,12 +249,12 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
   const breadthBlock = breadth && (
     <div className="px-2 py-1.5 rounded-lg border border-[var(--border-primary)] bg-white/[0.02]">
       <div className="flex items-center justify-between">
-        <span className="text-[9px] font-mono tracking-widest text-[var(--text-muted)]">BREADTH</span>
+        <span className="text-[9px] font-mono tracking-widest text-[var(--text-muted)]">{t('breadth')}</span>
         <span className="text-[10px] font-mono tabular-nums">
           <span style={{ color: GREEN }}>{breadth.up}▲</span>
           <span className="text-[var(--text-muted)]"> / </span>
           <span style={{ color: RED }}>{breadth.down}▼</span>
-          <span className="text-[var(--text-muted)]"> of {breadth.total}</span>
+          <span className="text-[var(--text-muted)]">{t('ofTotal', { n: breadth.total })}</span>
         </span>
       </div>
       <div className="mt-1.5 h-1 rounded-full overflow-hidden bg-[var(--alert-red)]/30">
@@ -205,7 +272,7 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <Zap className="w-3 h-3" style={{ color: spaceWeather.storm_color }} />
-          <span className="text-[11px] font-mono tracking-widest text-[var(--text-muted)]">SPACE WEATHER</span>
+          <span className="text-[11px] font-mono tracking-widest text-[var(--text-muted)]">{t('spaceWeather')}</span>
         </div>
         <span className="text-[11px] font-mono font-bold" style={{ color: spaceWeather.storm_color }}>
           Kp {spaceWeather.kp_index} — {spaceWeather.storm_level}
@@ -213,7 +280,7 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
       </div>
       {spaceWeather.solar_flares?.length > 0 && (
         <div className="mt-1 text-[9px] font-mono text-[var(--text-muted)]">
-          Latest flare: {spaceWeather.solar_flares[0].class}
+          {t('latestFlare', { cls: spaceWeather.solar_flares[0].class })}
         </div>
       )}
     </div>
@@ -249,7 +316,7 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
           <button key={s.key} onClick={() => setActiveSection(s.key)}
             className={`flex items-center gap-1 px-2.5 py-1.5 rounded text-[10px] font-mono tracking-wider whitespace-nowrap transition-all ${activeSection === s.key ? 'bg-[var(--hover-accent)] text-[var(--gold-primary)] border border-[var(--border-primary)]' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)] border border-transparent'}`}>
             <Icon className="w-3 h-3" />
-            {s.label}
+            {t(s.label)}
             {count > 0 && <span className="text-[var(--text-muted)]">{count}</span>}
           </button>
         );
@@ -261,18 +328,21 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
     <div className="flex items-center justify-between px-2 py-1 shrink-0">
       <span className="flex items-center gap-1 text-[9px] font-mono tracking-widest text-[var(--text-muted)]">
         <span className="w-1 h-1 rounded-full" style={{ background: sessionOpen ? GREEN : 'var(--text-muted)' }} />
-        {sessionOpen ? 'SESSION OPEN' : 'SESSION CLOSED'}
+        {sessionOpen ? t('sessionOpen') : t('sessionClosed')}
       </span>
       <button
         onClick={() => setSortByMove(v => !v)}
         className={`flex items-center gap-1 text-[9px] font-mono tracking-widest transition-colors ${sortByMove ? 'text-[var(--gold-primary)]' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}
-        title={sortByMove ? 'Listed by biggest move' : 'Listed in feed order'}
+        title={sortByMove ? t('sortedByMove') : t('sortedByFeed')}
       >
         <ArrowUpDown className="w-2.5 h-2.5" />
-        {sortByMove ? 'BY MOVE' : 'DEFAULT'}
+        {sortByMove ? t('byMove') : t('defaultOrder')}
       </button>
     </div>
   );
+
+  const activeLabelKey = SECTIONS.find(s => s.key === activeSection)?.label;
+  const activeLabel = activeLabelKey ? t(activeLabelKey) : activeSection.toUpperCase();
 
   const listRows = (
     <>
@@ -291,10 +361,10 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
         feedLoaded ? (
           <div className="flex items-center justify-center gap-1.5 py-3 text-[10px] font-mono text-[var(--text-muted)]">
             <AlertTriangle className="w-3 h-3" />
-            {activeSection.toUpperCase()} FEED UNAVAILABLE — RETRYING
+            {t('feedUnavailable', { section: activeLabel })}
           </div>
         ) : (
-          <div className="text-center py-3 text-[11px] font-mono text-[var(--text-muted)]">Loading {activeSection}...</div>
+          <div className="text-center py-3 text-[11px] font-mono text-[var(--text-muted)]">{t('loadingSection', { section: activeLabel.toLowerCase() })}</div>
         )
       )}
     </>
@@ -323,16 +393,16 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
             style={{ background: 'var(--gold-primary)', boxShadow: '0 0 8px rgba(var(--gold-rgb),0.6)' }}
           />
           <BarChart3 className="w-3.5 h-3.5 text-[var(--gold-primary)]" />
-          <span className="instrument-title">Markets &amp; Intel</span>
-          <span className="instrument-chip" style={{ color: 'var(--alert-green)' }}>Live</span>
+          <span className="instrument-title">{t('title')}</span>
+          <span className="instrument-chip" style={{ color: 'var(--alert-green)' }}>{t('live')}</span>
         </button>
         <div className="flex items-center gap-2">
           {age && <span className="text-[9px] font-mono text-[var(--text-muted)]">{age}</span>}
           <div className="w-1.5 h-1.5 rounded-full bg-[var(--alert-green)] animate-osiris-pulse" />
-          <button onClick={() => { setMaximized(!maximized); if (!expanded && !maximized) setExpanded(true); }} className="p-1.5 -m-0.5 rounded hover:text-white hover:bg-white/10 transition-colors" title={maximized ? "Restore" : "Maximize"}>
+          <button onClick={() => { setMaximized(!maximized); if (!expanded && !maximized) setExpanded(true); }} className="p-1.5 -m-0.5 rounded hover:text-white hover:bg-white/10 transition-colors" title={maximized ? t('restore') : t('maximize')}>
             {maximized ? <Minimize2 className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <Maximize2 className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
           </button>
-          <button onClick={() => setExpanded(!expanded)} title={expanded ? 'Collapse' : 'Expand'}>
+          <button onClick={() => setExpanded(!expanded)} title={expanded ? t('collapse') : t('expand')}>
             {expanded ? <ChevronUp className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
           </button>
         </div>

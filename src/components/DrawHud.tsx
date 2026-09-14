@@ -3,6 +3,7 @@
 import { Check, X, Undo2, MousePointerClick } from 'lucide-react';
 import type { DrawMode, DrawProgress } from '@/lib/draw';
 import { formatArea, formatDistance } from '@/lib/geo';
+import { defineMessages, useT } from '@/lib/i18n';
 
 /**
  * MinervaAI — on-map drawing HUD
@@ -26,36 +27,89 @@ interface DrawHudProps {
   onCancel: () => void;
 }
 
-const TITLE: Record<DrawMode, string> = {
-  polygon: 'AREA',
-  rectangle: 'BOX',
-  circle: 'RADIUS',
-  line: 'PATH',
+const MESSAGES = defineMessages({
+  en: {
+    titlePolygon: 'AREA',
+    titleRectangle: 'BOX',
+    titleCircle: 'RADIUS',
+    titleLine: 'PATH',
+    startPolygon: 'Click the first corner of your area',
+    startRectangle: 'Click one corner of the box',
+    startCircle: 'Click the centre point',
+    startLine: 'Click the start of the path',
+    rectangleNext: 'Now click the opposite corner',
+    circleNext: 'Now click to set the radius',
+    polygonMore: 'Keep clicking corners — {n} more needed',
+    polygonReady: 'Click more corners, or finish the area',
+    lineNext: 'Click the next waypoint',
+    lineReady: 'Click more waypoints, or finish the path',
+    undo: 'Undo point',
+    finishPath: 'Finish path',
+    finishArea: 'Finish area',
+    cancel: 'Cancel',
+    pointOne: '{n} point',
+    pointMany: '{n} points',
+    dblClickHint: ' · or double-click the map to finish',
+  },
+  it: {
+    titlePolygon: 'AREA',
+    titleRectangle: 'RIQUADRO',
+    titleCircle: 'RAGGIO',
+    titleLine: 'PERCORSO',
+    startPolygon: "Clicca il primo angolo dell'area",
+    startRectangle: 'Clicca un angolo del riquadro',
+    startCircle: 'Clicca il punto centrale',
+    startLine: "Clicca l'inizio del percorso",
+    rectangleNext: "Ora clicca l'angolo opposto",
+    circleNext: 'Ora clicca per impostare il raggio',
+    polygonMore: 'Continua a cliccare gli angoli — ne mancano {n}',
+    polygonReady: "Clicca altri angoli o completa l'area",
+    lineNext: 'Clicca il punto successivo',
+    lineReady: 'Clicca altri punti o completa il percorso',
+    undo: 'Annulla punto',
+    finishPath: 'Completa percorso',
+    finishArea: 'Completa area',
+    cancel: 'Annulla',
+    pointOne: '{n} punto',
+    pointMany: '{n} punti',
+    dblClickHint: ' · o doppio clic sulla mappa per completare',
+  },
+});
+
+type MessageKey = keyof typeof MESSAGES.en;
+type Translate = (key: MessageKey, vars?: Record<string, string | number>) => string;
+
+const TITLE: Record<DrawMode, MessageKey> = {
+  polygon: 'titlePolygon',
+  rectangle: 'titleRectangle',
+  circle: 'titleCircle',
+  line: 'titleLine',
 };
 
 /** What to do next, given how far along the shape is. */
-function step(mode: DrawMode, vertices: number): string {
+function step(t: Translate, mode: DrawMode, vertices: number): string {
   if (vertices === 0) {
     return {
-      polygon: 'Click the first corner of your area',
-      rectangle: 'Click one corner of the box',
-      circle: 'Click the centre point',
-      line: 'Click the start of the path',
+      polygon: t('startPolygon'),
+      rectangle: t('startRectangle'),
+      circle: t('startCircle'),
+      line: t('startLine'),
     }[mode];
   }
   switch (mode) {
-    case 'rectangle': return 'Now click the opposite corner';
-    case 'circle': return 'Now click to set the radius';
+    case 'rectangle': return t('rectangleNext');
+    case 'circle': return t('circleNext');
     case 'polygon':
       return vertices < 3
-        ? `Keep clicking corners — ${3 - vertices} more needed`
-        : 'Click more corners, or finish the area';
+        ? t('polygonMore', { n: 3 - vertices })
+        : t('polygonReady');
     case 'line':
-      return vertices < 2 ? 'Click the next waypoint' : 'Click more waypoints, or finish the path';
+      return vertices < 2 ? t('lineNext') : t('lineReady');
   }
 }
 
 export default function DrawHud({ mode, progress, onUndo, onFinish, onCancel }: DrawHudProps) {
+  const t = useT(MESSAGES);
   const vertices = progress?.vertices ?? 0;
   const canFinish = progress?.closable ?? false;
   // Two-click shapes complete themselves, so offering Finish would be a button
@@ -69,13 +123,13 @@ export default function DrawHud({ mode, progress, onUndo, onFinish, onCancel }: 
           <span className="flex items-center gap-2">
             <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--cyan-primary)]" />
             <span className="text-[11px] font-mono font-bold tracking-[0.2em] text-[var(--cyan-primary)]">
-              {TITLE[mode]}
+              {t(TITLE[mode])}
             </span>
           </span>
 
           <span className="flex items-center gap-1.5 text-[12px] text-[var(--text-primary)]">
             <MousePointerClick className="h-3.5 w-3.5 text-[var(--text-muted)]" />
-            {step(mode, vertices)}
+            {step(t, mode, vertices)}
           </span>
 
           {/* Running measurement — the reason to keep watching the map. */}
@@ -98,7 +152,7 @@ export default function DrawHud({ mode, progress, onUndo, onFinish, onCancel }: 
             disabled={vertices === 0}
             className="flex items-center gap-1.5 rounded-md border border-[var(--border-secondary)] px-2.5 py-1.5 text-[11px] font-mono text-[var(--text-secondary)] transition-colors hover:bg-white/10 hover:text-white disabled:opacity-30"
           >
-            <Undo2 className="h-3 w-3" /> Undo point
+            <Undo2 className="h-3 w-3" /> {t('undo')}
           </button>
 
           {!selfCompleting && (
@@ -112,7 +166,7 @@ export default function DrawHud({ mode, progress, onUndo, onFinish, onCancel }: 
               }`}
             >
               <Check className="h-3 w-3" />
-              Finish {mode === 'line' ? 'path' : 'area'}
+              {mode === 'line' ? t('finishPath') : t('finishArea')}
             </button>
           )}
 
@@ -120,12 +174,12 @@ export default function DrawHud({ mode, progress, onUndo, onFinish, onCancel }: 
             onClick={onCancel}
             className="flex items-center gap-1.5 rounded-md border border-[var(--border-secondary)] px-2.5 py-1.5 text-[11px] font-mono text-[var(--text-secondary)] transition-colors hover:border-[var(--alert-red)]/40 hover:text-[var(--alert-red)]"
           >
-            <X className="h-3 w-3" /> Cancel
+            <X className="h-3 w-3" /> {t('cancel')}
           </button>
 
           <span className="ml-auto pl-2 text-[10px] font-mono text-[var(--text-muted)]">
-            {vertices} point{vertices === 1 ? '' : 's'}
-            {!selfCompleting && ' · or double-click the map to finish'}
+            {t(vertices === 1 ? 'pointOne' : 'pointMany', { n: vertices })}
+            {!selfCompleting && t('dblClickHint')}
           </span>
         </div>
       </div>
