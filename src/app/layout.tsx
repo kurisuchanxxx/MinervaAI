@@ -3,7 +3,7 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { LanguageProvider } from '@/lib/i18n';
 import "./globals.css";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://minervaai.vercel.app";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://minervaai-steel.vercel.app";
 const SITE_NAME = "MinervaAI";
 const SITE_TITLE = "MinervaAI — Piattaforma di Intelligence Open Source | Voli live, CCTV, strumenti OSINT";
 const SITE_DESCRIPTION = "Dashboard di intelligence globale in tempo reale: oltre 10.000 aerei, 2.000 satelliti e telecamere CCTV di tutto il mondo su un globo 3D. Scansioni di rete, DNS, WHOIS, analisi certificati SSL e threat intelligence dal browser. Più di 20 feed live: terremoti, incendi, impianti nucleari, minacce cyber e conflitti. Gratuito e open source.";

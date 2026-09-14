@@ -49,5 +49,5 @@ echo ""
 
 echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║     ✅ DEPLOYMENT COMPLETE               ║${NC}"
-echo -e "${CYAN}║     https://minervaai.vercel.app is live         ║${NC}"
+echo -e "${CYAN}║     https://minervaai-steel.vercel.app is live         ║${NC}"
 echo -e "${CYAN}╚══════════════════════════════════════════╝${NC}"

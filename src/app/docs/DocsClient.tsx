@@ -194,7 +194,7 @@ const GUIDE_SECTIONS: { id: string; key: MessageKey }[] = [
 
 /** Section ids in page order — language-independent, used by the scroll-spy. */
 const ALL_SECTION_IDS = [...GUIDE_SECTIONS.map(s => s.id), 'api', ...API_GROUPS.map(g => `api-${g.id}`)];
-const FALLBACK_ORIGIN = 'https://minervaai.vercel.app';
+const FALLBACK_ORIGIN = 'https://minervaai-steel.vercel.app';
 
 export default function DocsClient() {
   const [active, setActive] = useState('overview');

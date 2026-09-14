@@ -17,6 +17,8 @@
 
 ## 🇮🇹 Italiano
 
+🌐 **Demo live:** https://minervaai-steel.vercel.app
+
 **MinervaAI** è una dashboard di intelligence globale in tempo reale: tracciamento voli, reti CCTV, terremoti, incendi, zone di conflitto, satelliti e notizie live 24/7 in un'unica interfaccia accelerata via GPU.
 
 L'interfaccia è disponibile in **italiano** (predefinito) e **inglese**: il selettore **IT / EN** si trova in alto a destra.

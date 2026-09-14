@@ -1,5 +1,5 @@
 # MinervaAI Global Intelligence Platform
-# https://minervaai.vercel.app
+# https://minervaai-steel.vercel.app
 
 User-agent: *
 Allow: /
@@ -11,7 +11,7 @@ Disallow: /api/osint/*
 Allow: /api/health
 
 # Sitemap
-Sitemap: https://minervaai.vercel.app/sitemap.xml
+Sitemap: https://minervaai-steel.vercel.app/sitemap.xml
 
 # Crawl-delay for respectful indexing
 Crawl-delay: 10
