@@ -15,6 +15,12 @@ import { canReachLatitude, categoriseSatellite, findPasses, isLowEarthOrbit, typ
  * propagation is real work. Two filters do the heavy lifting: only satellites
  * whose names identify a known imaging programme, and only orbits whose
  * inclination can reach the target latitude at all.
+ *
+ * The disk cache the satellites layer writes is an optimisation, not a
+ * dependency: on a serverless platform the filesystem is per-instance and
+ * empty on a cold start, so this route falls back to fetching the handful of
+ * CelesTrak groups that actually contain imaging satellites. Without that it
+ * answered 503 on any instance that had not served the map yet.
  */
 
 export const dynamic = 'force-dynamic';
@@ -22,26 +28,71 @@ export const maxDuration = 30;
 
 const CACHE_FILE = join(process.cwd(), '.next', 'cache', 'satellites-tle-cache.json');
 const CACHE_TTL_MS = 5 * 60_000;
+const REMOTE_TTL_MS = 6 * 3600_000;
+
+/** The CelesTrak groups that hold Earth-imaging and reconnaissance satellites. */
+const GROUPS = ['resource', 'military', 'radar', 'planet', 'spire', 'dmc'];
+const CT = 'https://celestrak.org/NORAD/elements/gp.php?GROUP=';
+const FMT = '&FORMAT=tle';
 /** Above this, the response would cost more time than the answer is worth. */
 const MAX_CANDIDATES = 220;
 
 interface Tle { name: string; line1: string; line2: string }
 
-let cache: { at: number; sats: Tle[] } | null = null;
+let cache: { at: number; sats: Tle[]; source: 'disk' | 'celestrak' } | null = null;
 
-function catalogue(): Tle[] {
-  if (cache && Date.now() - cache.at < CACHE_TTL_MS) return cache.sats;
-  let sats: Tle[] = [];
+function fromDisk(): Tle[] {
   try {
-    if (existsSync(CACHE_FILE)) {
-      const parsed = JSON.parse(readFileSync(CACHE_FILE, 'utf8')) as { sats?: Tle[] };
-      sats = (parsed.sats ?? []).filter(s => s?.line1 && s?.line2 && s?.name);
-    }
+    if (!existsSync(CACHE_FILE)) return [];
+    const parsed = JSON.parse(readFileSync(CACHE_FILE, 'utf8')) as { sats?: Tle[] };
+    return (parsed.sats ?? []).filter(s => s?.line1 && s?.line2 && s?.name);
   } catch {
-    // No catalogue means no prediction, not a broken page.
+    // A corrupt cache is the same as no cache: fall through to the network.
+    return [];
   }
-  cache = { at: Date.now(), sats };
+}
+
+/** Parses CelesTrak's three-line format into element sets. */
+function parseTle(text: string): Tle[] {
+  const lines = text.split(/\r?\n/).map(l => l.trimEnd());
+  const sats: Tle[] = [];
+  for (let i = 0; i + 2 < lines.length; i += 3) {
+    const [name, line1, line2] = [lines[i]?.trim(), lines[i + 1], lines[i + 2]];
+    if (name && line1?.startsWith('1 ') && line2?.startsWith('2 ')) sats.push({ name, line1, line2 });
+  }
   return sats;
+}
+
+async function fromCelestrak(): Promise<Tle[]> {
+  const responses = await Promise.allSettled(
+    GROUPS.map(group =>
+      fetch(`${CT}${group}${FMT}`, {
+        headers: { 'User-Agent': 'MinervaAI-Intel/1.0' },
+        signal: AbortSignal.timeout(8000),
+      }).then(res => (res.ok ? res.text() : '')),
+    ),
+  );
+  const byName = new Map<string, Tle>();
+  for (const result of responses) {
+    if (result.status !== 'fulfilled' || !result.value) continue;
+    for (const sat of parseTle(result.value)) byName.set(sat.name, sat);
+  }
+  return [...byName.values()];
+}
+
+async function catalogue(): Promise<{ sats: Tle[]; source: 'disk' | 'celestrak' }> {
+  const ttl = cache?.source === 'celestrak' ? REMOTE_TTL_MS : CACHE_TTL_MS;
+  if (cache && Date.now() - cache.at < ttl && cache.sats.length > 0) return cache;
+
+  const disk = fromDisk();
+  if (disk.length > 0) {
+    cache = { at: Date.now(), sats: disk, source: 'disk' };
+    return cache;
+  }
+
+  const remote = await fromCelestrak();
+  cache = { at: Date.now(), sats: remote, source: 'celestrak' };
+  return cache;
 }
 
 function num(raw: string | null, fallback: number, min: number, max: number): number {
@@ -72,10 +123,10 @@ export async function GET(req: Request) {
   const categories: SatPassCategory[] =
     wanted === 'recon' ? ['recon'] : wanted === 'imaging' ? ['imaging'] : ['recon', 'imaging'];
 
-  const sats = catalogue();
+  const { sats, source } = await catalogue();
   if (sats.length === 0) {
     return NextResponse.json(
-      { error: 'Satellite catalogue not loaded yet — open the satellites layer once, then retry.', passes: [] },
+      { error: 'Satellite element sets are unavailable right now — CelesTrak could not be reached.', passes: [] },
       { status: 503 },
     );
   }
@@ -103,6 +154,7 @@ export async function GET(req: Request) {
     minElevation,
     searched: candidates.length,
     catalogueSize: sats.length,
+    catalogueSource: source,
     passes: results.slice(0, 60),
   });
 }
