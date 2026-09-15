@@ -41,6 +41,7 @@ import { fetchGeorgiaCameras } from './georgia';
 import { fetchNorthCarolinaCameras } from './northcarolina';
 import { fetchArizonaCameras } from './arizona';
 import { fetchEastAsiaCameras, fetchSeAsiaCameras, fetchWestAsiaCameras } from './opencctv';
+import { isStaticRegion } from './static-regions';
 import {
   fetchLatamLiveCameras,
   fetchAfricaLiveCameras,
@@ -590,6 +591,17 @@ const refreshing = new Map<string, Promise<any[]>>();
 function refreshRegion(region: string): Promise<any[]> {
   const existing = refreshing.get(region);
   if (existing) return existing;
+
+  /* A bundled catalogue needs no slot and cannot hang: putting it through the
+     pool only let slow upstreams push it past the budget, which is what
+     emptied whole continents out of the global response. */
+  if (isStaticRegion(region)) {
+    const immediate = Promise.resolve(REGION_FETCHERS[region]())
+      .catch(() => [])
+      .finally(() => { refreshing.delete(region); });
+    refreshing.set(region, immediate);
+    return immediate;
+  }
 
   const started = regionPool.run(async () => {
     let timer: ReturnType<typeof setTimeout> | undefined;
