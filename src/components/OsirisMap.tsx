@@ -167,6 +167,10 @@ const MESSAGES = defineMessages({
     sourceArticle: 'SOURCE ARTICLE',
     // Cloudflare outages
     ongoingOutage: 'ONGOING OUTAGE',
+    milRole_tanker: 'TANKER', milRole_isr: 'ISR', milRole_awacs: 'AEW&C', milRole_patrol: 'MARITIME PATROL',
+    milRole_transport: 'TRANSPORT', milRole_fighter: 'FIGHTER', milRole_bomber: 'BOMBER',
+    milRole_helicopter: 'HELICOPTER', milRole_uav: 'UAV', milRole_trainer: 'TRAINER', milRole_vip: 'VIP / COMMAND',
+    orbitingFor: 'ORBITING · {min} min within {km} km',
     gpsJamTitle: 'GPS INTERFERENCE ZONE',
     gpsJamSeverity: 'Severity',
     gpsJamAircraft: 'Aircraft affected',
@@ -330,6 +334,10 @@ const MESSAGES = defineMessages({
     country: 'Paese',
     sourceArticle: 'ARTICOLO FONTE',
     ongoingOutage: 'INTERRUZIONE IN CORSO',
+    milRole_tanker: 'AEROCISTERNA', milRole_isr: 'RICOGNIZIONE', milRole_awacs: 'AEW&C', milRole_patrol: 'PATTUGLIAMENTO MARITTIMO',
+    milRole_transport: 'TRASPORTO', milRole_fighter: 'CACCIA', milRole_bomber: 'BOMBARDIERE',
+    milRole_helicopter: 'ELICOTTERO', milRole_uav: 'DRONE', milRole_trainer: 'ADDESTRAMENTO', milRole_vip: 'VIP / COMANDO',
+    orbitingFor: 'IN ORBITA · {min} min entro {km} km',
     gpsJamTitle: 'ZONA DI DISTURBO GPS',
     gpsJamSeverity: 'Gravità',
     gpsJamAircraft: 'Aerei interessati',
@@ -1245,6 +1253,8 @@ function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightCl
             <span style="color:#E8E6E0;font-size:15px;font-weight:700;letter-spacing:0.08em;">${htmlEsc(cs)}</span>
             <span style="color:#5C5A54;font-size:10px;">${htmlEsc(p.icao24||'')}</span>
           </div>
+          ${p.role && p.role !== 'other' ? `<div style="margin-bottom:8px;"><span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;letter-spacing:0.12em;color:#FFB300;border:1px solid rgba(255,179,0,0.4);background:rgba(255,179,0,0.1);">${tr(('milRole_' + p.role) as MsgKey)}</span></div>` : ''}
+          ${(p.orbiting === true || p.orbiting === 'true') ? `<div style="margin-bottom:8px;"><span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;letter-spacing:0.12em;color:#FF6B6B;border:1px solid rgba(255,107,107,0.4);background:rgba(255,107,107,0.1);">${tr('orbitingFor', { min: p.orbit_minutes ?? '?', km: p.orbit_radius_km ?? '?' })}</span></div>` : ''}
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:11px;">
             <div><span style="color:#5C5A54;font-size:9px;">${tr('model')}</span><br/><span style="color:#B0BEC5;">${htmlEsc(p.model||'—')}</span></div>
             <div><span style="color:#5C5A54;font-size:9px;">${tr('alt')}</span><br/><span style="color:#B0BEC5;">${p.alt?Math.round(p.alt)+'m':'—'}</span></div>
@@ -2028,7 +2038,7 @@ function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightCl
       }
       return filtered.map((f: any) => ({
         type: 'Feature' as const, geometry: { type: 'Point' as const, coordinates: [f.lng, f.lat] },
-        properties: { callsign: f.callsign, heading: f.heading || 0, alt: f.alt, model: f.model, speed_knots: f.speed_knots, registration: f.registration, icao24: f.icao24 },
+        properties: { callsign: f.callsign, heading: f.heading || 0, alt: f.alt, model: f.model, speed_knots: f.speed_knots, registration: f.registration, icao24: f.icao24, role: f.role || '', orbiting: !!f.orbiting, orbit_minutes: f.orbit_minutes ?? null, orbit_radius_km: f.orbit_radius_km ?? null },
       }));
     };
     setGeo('flights', activeLayers.flights ? toFeatures(data.commercial_flights, 10) : []);

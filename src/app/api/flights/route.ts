@@ -1,5 +1,6 @@
 
 import { NextResponse } from 'next/server';
+import { roleForType } from '@/lib/mil-aircraft';
 import { stealthFetch } from '@/lib/stealthFetch';
 
 export const maxDuration = 60;
@@ -211,6 +212,9 @@ function classifyFlight(f: any) {
     airline_code: airlineCode,
     aircraft_category: isHeli ? 'heli' : 'plane',
     category,
+    // Only meaningful for military traffic; a tanker or an ISR platform reads
+    // very differently from a transport on a schedule.
+    role: category === 'military' ? roleForType(f.t) : undefined,
     grounded: isGrounded,
     nac_p: f.nac_p,
     type: 'flight',

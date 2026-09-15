@@ -34,6 +34,18 @@ describe('SITREP', () => {
     expect(r.headline).toMatch(/conflitto/i);
   });
 
+  it('calls out aircraft holding on station, with their role', () => {
+    const r = buildSitrep({
+      ...base,
+      counts: { military: 2, orbiting: 1 },
+      notable: { military: [{ callsign: 'BLKCT21', model: 'KC46', role: 'tanker', orbiting: true }] },
+    });
+    expect(r.text).toContain('in orbita di attesa');
+    expect(r.text).toContain('BLKCT21 (KC46, aerocisterna) ↻');
+    // Holding on station is a stronger statement than "military present".
+    expect(r.headline).toMatch(/orbita di attesa/i);
+  });
+
   it('produces English output', () => {
     const r = buildSitrep({ ...base, lang: 'en', counts: { flights: 10 } });
     expect(r.text).toContain('SITUATION REPORT');

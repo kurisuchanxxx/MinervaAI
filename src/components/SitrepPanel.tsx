@@ -75,6 +75,7 @@ function digest(data: SitrepData): { counts: SitrepCounts; notable: SitrepNotabl
   const counts: SitrepCounts = {
     flights: len(data.commercial_flights) + len(data.private_flights) + len(data.private_jets) + military.length,
     military: military.length,
+    orbiting: military.filter(m => m.orbiting === true).length,
     jets: len(data.private_jets),
     ships: len(data.maritime_ships),
     earthquakes: quakes.length,
@@ -88,7 +89,7 @@ function digest(data: SitrepData): { counts: SitrepCounts; notable: SitrepNotabl
   };
 
   const notable: SitrepNotable = {
-    military: military.slice(0, 5).map(m => ({ callsign: str(m.callsign) || str(m.icao24) || '—', model: str(m.model) })),
+    military: military.slice(0, 5).map(m => ({ callsign: str(m.callsign) || str(m.icao24) || '—', model: str(m.model), role: str(m.role), orbiting: m.orbiting === true })),
     earthquakes: [...quakes]
       .sort((a, b) => n(b.magnitude) - n(a.magnitude))
       .slice(0, 3)

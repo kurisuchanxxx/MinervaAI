@@ -20,6 +20,8 @@ export interface SitrepArea {
 export interface SitrepCounts {
   flights?: number;
   military?: number;
+  /** Military aircraft flying a holding pattern rather than transiting. */
+  orbiting?: number;
   jets?: number;
   ships?: number;
   earthquakes?: number;
@@ -33,7 +35,7 @@ export interface SitrepCounts {
 }
 
 export interface SitrepNotable {
-  military?: { callsign: string; model?: string }[];
+  military?: { callsign: string; model?: string; role?: string; orbiting?: boolean }[];
   earthquakes?: { magnitude: number; place: string }[];
   conflicts?: { label: string; severity?: string }[];
   navWarnings?: { navArea: string; msgNumber: number; category: string }[];
@@ -67,6 +69,7 @@ const T = {
     secAir: 'AVIAZIONE', secSea: 'MARITTIMO', secGeo: 'GEOFISICO', secConflict: 'CONFLITTI ED EVENTI', secSignals: 'SEGNALI E AVVISI', secAssessment: 'VALUTAZIONE',
     flights: (n: number) => `${n} aeromobili tracciati`,
     military: (n: number) => `${n} con profilo militare`,
+    orbiting: (n: number) => `${n} in orbita di attesa (pattugliamento/rifornimento in corso)`,
     jets: (n: number) => `${n} jet privati/executive`,
     ships: (n: number) => `${n} navi in area`,
     quakes: (n: number) => `${n} eventi sismici recenti`,
@@ -82,6 +85,7 @@ const T = {
     notableMil: 'Assetti militari',
     assessCalm: 'Quadro complessivamente stabile: nessun indicatore critico.',
     assessMil: 'Presenza militare aerea rilevata; monitorare i movimenti.',
+    assessOrbit: 'Assetti in orbita di attesa: attività sostenuta sull’area, non semplice transito.',
     assessConflict: 'Attività di conflitto in corso nell’area: elevata attenzione.',
     assessSignals: 'Interferenze/avvisi ai naviganti attivi: navigazione satellitare e transiti potenzialmente compromessi.',
     assessSeismic: 'Attività sismica rilevante: possibili effetti a terra.',
@@ -96,6 +100,7 @@ const T = {
     secAir: 'AVIATION', secSea: 'MARITIME', secGeo: 'GEOPHYSICAL', secConflict: 'CONFLICT & EVENTS', secSignals: 'SIGNALS & WARNINGS', secAssessment: 'ASSESSMENT',
     flights: (n: number) => `${n} aircraft tracked`,
     military: (n: number) => `${n} with a military profile`,
+    orbiting: (n: number) => `${n} holding on station (patrol/refuelling pattern)`,
     jets: (n: number) => `${n} private/business jets`,
     ships: (n: number) => `${n} vessels in area`,
     quakes: (n: number) => `${n} recent seismic events`,
@@ -111,12 +116,32 @@ const T = {
     notableMil: 'Military assets',
     assessCalm: 'Overall stable picture: no critical indicators.',
     assessMil: 'Military air presence detected; monitor movements.',
+    assessOrbit: 'Assets holding on station: sustained activity over the area, not mere transit.',
     assessConflict: 'Active conflict activity in the area: heightened attention.',
     assessSignals: 'Active interference / mariner warnings: satellite navigation and transits potentially degraded.',
     assessSeismic: 'Significant seismic activity: possible ground effects.',
     sourcesNote: 'Sources: public OSINT (OpenSky/ADS-B, USGS, NASA, NGA MSI, GDELT).',
   },
 } as const;
+
+const ROLE_LABEL: Record<string, { it: string; en: string }> = {
+  tanker: { it: 'aerocisterna', en: 'tanker' },
+  isr: { it: 'ricognizione', en: 'ISR' },
+  awacs: { it: 'AEW&C', en: 'AEW&C' },
+  patrol: { it: 'pattugliamento marittimo', en: 'maritime patrol' },
+  transport: { it: 'trasporto', en: 'transport' },
+  fighter: { it: 'caccia', en: 'fighter' },
+  bomber: { it: 'bombardiere', en: 'bomber' },
+  helicopter: { it: 'elicottero', en: 'helicopter' },
+  uav: { it: 'drone', en: 'UAV' },
+  trainer: { it: 'addestramento', en: 'trainer' },
+  vip: { it: 'VIP/comando', en: 'VIP/command' },
+};
+
+function roleLabel(lang: SitrepLang, role?: string): string | null {
+  if (!role || role === 'other') return null;
+  return ROLE_LABEL[role]?.[lang] ?? null;
+}
 
 function catLabel(lang: SitrepLang, category: string): string {
   const map: Record<string, { it: string; en: string }> = {
@@ -151,9 +176,13 @@ export function buildSitrep(input: SitrepInput): Sitrep {
   const air: string[] = [];
   if (c.flights) air.push(t.flights(c.flights));
   if (c.military) air.push(t.military(c.military));
+  if (c.orbiting) air.push(t.orbiting(c.orbiting));
   if (c.jets) air.push(t.jets(c.jets));
   if (notable?.military?.length) {
-    air.push(`${t.notableMil}: ${notable.military.slice(0, 5).map(m => m.callsign + (m.model ? ` (${m.model})` : '')).join(', ')}`);
+    air.push(`${t.notableMil}: ${notable.military.slice(0, 5).map(m => {
+      const detail = [m.model, roleLabel(lang, m.role)].filter(Boolean).join(', ');
+      return m.callsign + (detail ? ` (${detail})` : '') + (m.orbiting ? ' ↻' : '');
+    }).join(', ')}`);
   }
   if (air.length) sections.push({ heading: t.secAir, lines: air });
 
@@ -188,7 +217,8 @@ export function buildSitrep(input: SitrepInput): Sitrep {
   const assess: string[] = [];
   if (c.conflicts) assess.push(t.assessConflict);
   if (c.navWarnings || c.gpsJamming) assess.push(t.assessSignals);
-  if (c.military) assess.push(t.assessMil);
+  if (c.orbiting) assess.push(t.assessOrbit);
+  else if (c.military) assess.push(t.assessMil);
   if ((c.earthquakes ?? 0) >= 3) assess.push(t.assessSeismic);
   if (assess.length === 0) assess.push(t.assessCalm);
   sections.push({ heading: t.secAssessment, lines: assess });

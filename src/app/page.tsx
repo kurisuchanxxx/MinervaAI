@@ -20,6 +20,7 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { applySettings, loadSavedSettings } from '@/lib/style-tokens';
 import { COORD_FORMAT_STORAGE_KEY, COORD_FORMATS, coordFormatLabel, formatCoord, isCoordFormat, type CoordFormat } from '@/lib/coords';
 import { deserializeSymbols, serializeSymbols, SYMBOL_STORAGE_KEY, type Affiliation, type Echelon, type PlacedSymbol } from '@/lib/milsym';
+import { appendSample, detectLoiter, type TrackSample } from '@/lib/mil-aircraft';
 import SharePanel from '@/components/SharePanel';
 import ViewPresets from '@/components/ViewPresets';
 import KeyboardShortcuts from '@/components/KeyboardShortcuts';
@@ -355,6 +356,36 @@ export default function Dashboard() {
   const dataRef = useRef<any>({});
   const [dataVersion, setDataVersion] = useState(0);
   const data = dataRef.current;
+
+  /**
+   * Per-aircraft position history, used to tell a holding pattern from a
+   * transit. Kept for the session only: an orbit is interesting while it is
+   * happening, and nothing here is worth persisting.
+   */
+  const trackHistory = useRef(new Map<string, TrackSample[]>());
+
+  /**
+   * Flags military traffic that has been circling. Runs on the feed response
+   * rather than in render, so each poll contributes exactly one sample per
+   * aircraft and the map sees the flag immediately.
+   */
+  const markOrbits = useCallback((payload: Record<string, unknown>) => {
+    type MilFlight = { icao24?: string; callsign?: string; lat?: number; lng?: number; grounded?: boolean };
+    const flights: MilFlight[] = Array.isArray(payload?.military_flights) ? payload.military_flights : [];
+    const now = Date.now();
+    const marked = flights.map(f => {
+      const id = f.icao24 || f.callsign;
+      if (!id || f.grounded || typeof f.lat !== 'number' || typeof f.lng !== 'number') return f;
+      appendSample(trackHistory.current, id, { lat: f.lat, lng: f.lng, ts: now });
+      const verdict = detectLoiter(trackHistory.current.get(id) ?? [], {}, now);
+      return verdict.orbiting
+        ? { ...f, orbiting: true, orbit_minutes: verdict.spanMinutes, orbit_radius_km: verdict.radiusKm }
+        : f;
+    });
+    // Aircraft that have left the feed should not keep a stale track around.
+    if (trackHistory.current.size > 4000) trackHistory.current.clear();
+    return { ...payload, military_flights: marked };
+  }, []);
 
   const [backendStatus, setBackendStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
   const [mapView, setMapView] = useState({ zoom: 2.5, latitude: 20 });
@@ -918,7 +949,7 @@ export default function Dashboard() {
     // Flights
     if (activeLayers.flights || activeLayers.military || activeLayers.jets || activeLayers.private || (activeLayers as any).gps_jamming) {
       if (!layerFetchedRef.current.has('flights')) {
-        fetchEndpoint('/api/flights');
+        fetchEndpoint('/api/flights', markOrbits);
         layerFetchedRef.current.add('flights');
       }
     }
@@ -1034,7 +1065,7 @@ export default function Dashboard() {
   useEffect(() => {
     const intervals: ReturnType<typeof setInterval>[] = [];
     if (activeLayers.flights || activeLayers.military || activeLayers.jets || activeLayers.private) {
-      intervals.push(setInterval(() => fetchEndpoint('/api/flights'), 300000)); // 5 min (was 2 min)
+      intervals.push(setInterval(() => fetchEndpoint('/api/flights', markOrbits), 300000)); // 5 min (was 2 min)
     }
 
     if (activeLayers.balloons) {
