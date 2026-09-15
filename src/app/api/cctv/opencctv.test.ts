@@ -38,7 +38,9 @@ describe('mapRecord', () => {
       lng: 127.0276,
       name: 'Gangnam-daero',
       city: 'Seoul',
-      country: 'KR',
+      // The directory stores ISO codes; every other feed stores names, and two
+      // entries for one country split its cameras on the map.
+      country: 'South Korea',
       stream_url: 'https://cctvsec.ktict.co.kr/1234/stream.m3u8',
       stream_type: 'hls',
       source: 'OpenCCTV / seoul-its',

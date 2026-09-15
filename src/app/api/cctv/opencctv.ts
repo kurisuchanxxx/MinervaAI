@@ -1,4 +1,5 @@
 import { stealthFetch } from '@/lib/stealthFetch';
+import { normaliseCountry } from '@/lib/country-names';
 import { cachedSource } from '@/lib/sourceCache';
 import type { CctvCamera, CctvStreamType } from './types';
 
@@ -112,7 +113,8 @@ export function mapRecord(rec: OpenCctvRecord): CctvCamera | null {
     lng,
     name,
     city: rec.city?.trim() || '',
-    country: rec.country?.trim() || '',
+    // The directory stores ISO codes where every other feed stores names.
+    country: normaliseCountry(rec.country),
     /* A still is a feed_url; everything else is a stream the player picks up. */
     ...(kind === 'jpg' ? { feed_url: url } : { stream_url: url, stream_type: kind }),
     source: rec.source?.trim() ? `OpenCCTV / ${rec.source.trim()}` : 'OpenCCTV',
