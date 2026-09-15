@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Layers, BarChart3, Newspaper, Search, X, Globe, MapPinned, Route, Radar, Satellite, Moon, ExternalLink, AlertTriangle, Activity, Database, Wifi, Play, Network, Crosshair, Bluetooth, Pentagon, Radio , PenLine, FileText } from 'lucide-react';
+import { Layers, BarChart3, Newspaper, Search, X, Globe, MapPinned, Route, Radar, Satellite, Moon, ExternalLink, AlertTriangle, Activity, Database, Wifi, Play, Network, Crosshair, Bluetooth, Pentagon, Radio , PenLine, FileText, Images } from 'lucide-react';
 import { type TerrainStatus } from '@/lib/map-terrain';
 import { loadCameraCatalog, mergeCameraCatalog } from '@/lib/camera-catalog';
 import IntelFeed from '@/components/IntelFeed';
@@ -32,6 +32,7 @@ import MinervaLogo from '@/components/MinervaLogo';
 const SitrepPanel = dynamic(() => import('@/components/SitrepPanel'));
 const MilSymbolPanel = dynamic(() => import('@/components/MilSymbolPanel'));
 const SatPassPanel = dynamic(() => import('@/components/SatPassPanel'));
+const ImageryPanel = dynamic(() => import('@/components/ImageryPanel'));
 import { LanguageToggle, defineMessages, useT, useLang, translate, localeOf } from '@/lib/i18n';
 const OsirisMap = dynamic(() => import('@/components/OsirisMap'), { ssr: false });
 const LayerPanel = dynamic(() => import('@/components/LayerPanel'));
@@ -148,6 +149,7 @@ const MESSAGES = defineMessages({
     sitrepTip: 'SITREP — situational report',
     symbolsTip: 'NATO symbols (APP-6)',
     passesTip: 'Satellite passes over the map centre',
+    imageryTip: 'Before / after satellite comparison',
     cursor: 'CURSOR',
     locationTitle: 'Reverse-geocoded location name',
     location: 'LOCATION',
@@ -251,6 +253,7 @@ const MESSAGES = defineMessages({
     sitrepTip: 'SITREP — rapporto situazionale',
     symbolsTip: 'Simboli NATO (APP-6)',
     passesTip: 'Passaggi satelliti sul centro mappa',
+    imageryTip: 'Confronto satellitare prima / dopo',
     cursor: 'CURSORE',
     locationTitle: 'Nome della località (geocodifica inversa)',
     location: 'LUOGO',
@@ -429,6 +432,7 @@ export default function Dashboard() {
   const [showSitrep, setShowSitrep] = useState(false);
   const [showSymbols, setShowSymbols] = useState(false);
   const [showPasses, setShowPasses] = useState(false);
+  const [showImagery, setShowImagery] = useState(false);
   const [milSymbols, setMilSymbols] = useState<PlacedSymbol[]>([]);
   /** Symbol waiting for a map click, or null when not placing. */
   const [pendingSymbol, setPendingSymbol] = useState<{ kindId: string; affiliation: Affiliation; echelon: Echelon; label?: string } | null>(null);
@@ -1750,6 +1754,26 @@ export default function Dashboard() {
             )}
           </button>
           <span className="absolute right-11 top-1/2 -translate-y-1/2 px-2 py-1 text-[9px] font-mono tracking-wider text-white/80 bg-black/80 backdrop-blur-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">{t('drawLabel')}</span>
+        </div>
+
+        <div className="relative group">
+          <button onClick={() => { setShowImagery(!showImagery); setShowIntel(false); setShowMarkets(false); setShowAlerts(false); setShowSpaceCam(false); setShowSitrep(false); setShowSymbols(false); setShowPasses(false); }} className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${showImagery ? 'bg-[var(--cyan-primary)]/20' : 'hover:bg-white/10'}`} title={t('imageryTip')} aria-label={t('imageryTip')} aria-expanded={showImagery}>
+            <Images className={`w-4 h-4 ${showImagery ? 'text-[var(--cyan-primary)]' : 'text-white/60'}`} />
+            {showImagery && (
+              <span aria-hidden="true" className="absolute -right-1 top-1/2 -translate-y-1/2 h-4 w-[2px] rounded-full bg-current text-[var(--cyan-primary)]" />
+            )}
+          </button>
+          <span className="absolute right-11 top-1/2 -translate-y-1/2 px-2 py-1 text-[9px] font-mono tracking-wider text-white/80 bg-black/80 backdrop-blur-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">IMG</span>
+          <AnimatePresence>
+            {showImagery && (
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="absolute right-12 top-1/2 -translate-y-1/2">
+                <ImageryPanel
+                  bounds={mapCenter?.bounds ?? null}
+                  centre={mapCenter ? { lat: mapCenter.lat, lng: mapCenter.lng } : null}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <div className="relative group">

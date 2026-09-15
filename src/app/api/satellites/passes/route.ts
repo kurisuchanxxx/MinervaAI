@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { canReachLatitude, categoriseSatellite, findPasses, isLowEarthOrbit, type SatPassCategory, type SatellitePass } from '@/lib/sat-passes';
+import { latLngParams, numParam } from '@/lib/query-params';
 
 /**
  * MinervaAI — imaging satellite passes over a point.
@@ -95,14 +96,6 @@ async function catalogue(): Promise<{ sats: Tle[]; source: 'disk' | 'celestrak' 
   return cache;
 }
 
-function num(raw: string | null, fallback: number, min: number, max: number): number {
-  // `Number(null)` is 0, not NaN, so an absent parameter has to be rejected
-  // before parsing — otherwise every default silently became the minimum.
-  if (raw === null || raw.trim() === '') return fallback;
-  const value = Number(raw);
-  if (!Number.isFinite(value)) return fallback;
-  return Math.min(max, Math.max(min, value));
-}
 
 export interface PassResult extends SatellitePass {
   name: string;
@@ -111,14 +104,13 @@ export interface PassResult extends SatellitePass {
 
 export async function GET(req: Request) {
   const params = new URL(req.url).searchParams;
-  const lat = Number(params.get('lat'));
-  const lng = Number(params.get('lng'));
-  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+  const point = latLngParams(params);
+  if (!point) {
     return NextResponse.json({ error: 'lat and lng are required' }, { status: 400 });
   }
-
-  const hours = num(params.get('hours'), 24, 1, 72);
-  const minElevation = num(params.get('minElevation'), 20, 0, 80);
+  const { lat, lng } = point;
+  const hours = numParam(params, 'hours', { fallback: 24, min: 1, max: 72 });
+  const minElevation = numParam(params, 'minElevation', { fallback: 20, min: 0, max: 80 });
   const wanted = params.get('category');
   const categories: SatPassCategory[] =
     wanted === 'recon' ? ['recon'] : wanted === 'imaging' ? ['imaging'] : ['recon', 'imaging'];
